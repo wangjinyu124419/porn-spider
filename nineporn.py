@@ -26,7 +26,7 @@ def count_time(fun):
 
 class NinePorn():
     pre_url = 'https://f.wonderfulday28.live/'
-    finish_file = '91porn_gem.txt'
+    finish_file = 'nineporn.txt'
     def __init__(self,type=None):
         if type=='gem':
             print('下载精华帖')
@@ -120,8 +120,8 @@ class NinePorn():
                     f.write(content)
                     print(pic_path)
                     return
-            except Exception:
-                print('保存失败第%d次，url:%s'%(i,url))
+            except Exception as e:
+                print('保存失败第%d次，url:%s,异常信息:%s'%(i+1,url,e))
                 time.sleep(i)
                 continue
         else:
@@ -211,6 +211,7 @@ class NinePorn():
                         self.record_finish_url(full_url, title)
             next_page = self.get_next_page()
             if not next_page:
+                print('最后一页:%s'%self.page_url)
                 driver.close()
                 break
 

@@ -42,6 +42,7 @@ class SexBar(NinePorn):
             except Exception:
                 time.sleep(i*5)
                 continue
+        print("登录失败")
 
 
     @count_time
@@ -64,14 +65,28 @@ class SexBar(NinePorn):
         title = ''
         try:
             driver.get(detail_url)
-            driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
             wait = WebDriverWait(driver, 120)
-            wait.until(EC.presence_of_element_located((By.XPATH, '//ignore_js_op//img')))
+            wait.until(EC.presence_of_element_located((By.XPATH, '//span[@id="thread_subject"]')))
+            driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
+
+            wait = WebDriverWait(driver, 180)
+            wait.until(EC.presence_of_element_located((By.XPATH, '//img[starts-with(@id,"aimg")]')))
             page_source = driver.page_source
             selector = etree.HTML(page_source)
             title = selector.xpath("//span[@id='thread_subject']/text()")[0]
+            # pic_url_list = selector.xpath('//img[starts-with(@id,"aimg")]/@file')
             pic_url_list = selector.xpath('//ignore_js_op//img/@file')
+
+            if not pic_url_list:
+                # pic_url_list = selector.xpath('//img[starts-with(@id,"aimg")]/@src')
+                pic_url_list = selector.xpath('//ignore_js_op//img/@src')
+
+            if not pic_url_list:
+                # pic_url_list = selector.xpath('//img[starts-with(@id,"aimg")]/@src')
+                pic_url_list = selector.xpath('//td[starts-with(@id,"postmessage")]//img[starts-with(@id,"aimg")]/@src')
             print("pic_url_list:%s, url:%s" % (len(pic_url_list), detail_url))
+            if not pic_url_list:
+                title= '空列表-' + title
             return pic_url_list, title
         except Exception:
             print('get_pic_list失败：%s' % detail_url)
@@ -94,14 +109,15 @@ class SexBar(NinePorn):
                 self.page_url = next_url
                 return next_url
             except Exception:
-                print('最后一页：%s' % self.page_url)
+                print('获取下一页失败：%s' % self.page_url)
                 print(traceback.format_exc())
                 continue
 
     def check_repeat_url(self, url):
         try:
             # unique_key=url.split("/")[-1]
-            unique_key=re.match('.*(\d{8}).*', url).group(1)
+            # unique_key=re.match('.*(\d).*', url).group(1)
+            unique_key = re.match('.*thread-(\d*).*', url).group(1)
             with open(self.finish_file, 'r', encoding='utf8') as f:
                 content_list = f.readlines()
                 for  content in content_list:

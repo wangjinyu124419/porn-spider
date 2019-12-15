@@ -18,7 +18,7 @@ class CaoLiu(NinePorn):
     root_dir = r'K:\爬虫\1024'
     page_url = 'http://t66y.com/thread0806.php?fid=16&search=&page=1'
     pre_url = 'http://t66y.com/'
-    finish_file = '1024.txt'
+    finish_file = 'caoliu..txt'
     def __init__(self):
         pass
 
@@ -49,9 +49,10 @@ class CaoLiu(NinePorn):
             selector = etree.HTML(page_source)
             title = selector.xpath("//h4/text()")[0]
             # try:
-            #     wait = WebDriverWait(driver, 60)
-            #     wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='tpc_content do_not_catch']//img")))
-            #     print('wait1:%s'%detail_url)
+            wait = WebDriverWait(driver, 300)
+            wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='tpc_content do_not_catch']")))
+            # wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='tpc_content do_not_catch']//img")))
+            print('wait1:%s'%detail_url)
             # except Exception:
             #     wait = WebDriverWait(driver, 100)
             #     wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='tpc_content do_not_catch']//input")))
@@ -60,36 +61,38 @@ class CaoLiu(NinePorn):
             # selector = etree.HTML(page_source)
             pic_url_list = selector.xpath("//div[@class='tpc_content do_not_catch']//@src")
             print("pic_url_list:%s, url:%s" % (len(pic_url_list), detail_url))
+            if not pic_url_list:
+                title = '空列表-' + title
             return pic_url_list, title
         except Exception:
             print('get_pic_list失败：%s' % detail_url)
             print(traceback.format_exc())
             return [], '失败-' + title
 
-    def save_pic(self, url, path):
-        name = url.split('/')[-1]
-        pic_path = os.path.join(self.root_dir, path, name)
-        if os.path.exists(pic_path):
-            print('文件已存在:%s' % pic_path)
-            return
-        for i in range(5):
-            try:
-                status_code = requests.get(url, proxies=self.proxies, timeout=10).status_code
-                if status_code != 200:
-                    print("status_code:%s,url:%s" % (status_code,url))
-                    return
-                content = requests.get(url, proxies=self.proxies, timeout=20).content
-                with open(pic_path, 'wb') as f:
-                    f.write(content)
-                    print(pic_path)
-                    break
-            except Exception as e:
-                print('save_pic失败第%d次'%(i+1),e)
-                time.sleep(i)
-                continue
-        else:
-            print(traceback.format_exc())
-            print('save_pic失败：%s' % url)
+    # def save_pic(self, url, path):
+    #     name = url.split('/')[-1]
+    #     pic_path = os.path.join(self.root_dir, path, name)
+    #     if os.path.exists(pic_path):
+    #         print('文件已存在:%s' % pic_path)
+    #         return
+    #     for i in range(5):
+    #         try:
+    #             status_code = requests.get(url, proxies=self.proxies, timeout=10).status_code
+    #             if status_code != 200:
+    #                 print("status_code:%s,url:%s" % (status_code,url))
+    #                 return
+    #             content = requests.get(url, proxies=self.proxies, timeout=20).content
+    #             with open(pic_path, 'wb') as f:
+    #                 f.write(content)
+    #                 print(pic_path)
+    #                 break
+    #         except Exception as e:
+    #             print('save_pic失败第%d次'%(i+1),e)
+    #             time.sleep(i)
+    #             continue
+    #     else:
+    #         print(traceback.format_exc())
+    #         print('save_pic失败：%s' % url)
 
     def get_next_page(self):
         for i in range(5):
@@ -106,7 +109,7 @@ class CaoLiu(NinePorn):
                 self.page_url = next_url
                 return next_url
             except Exception:
-                print('最后一页：%s' % self.page_url)
+                print('获取下一页失败：%s' % self.page_url)
                 print(traceback.format_exc())
                 continue
 
