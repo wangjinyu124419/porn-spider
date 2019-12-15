@@ -68,12 +68,17 @@ class SexBar(NinePorn):
             wait = WebDriverWait(driver, 120)
             wait.until(EC.presence_of_element_located((By.XPATH, '//span[@id="thread_subject"]')))
             driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
-
+            page_source = driver.page_source
+            selector = etree.HTML(page_source)
+            title = selector.xpath("//span[@id='thread_subject']/text()")[0]
+            ban = selector.xpath('//div[@id="postlist"]/div[1]//div[@class="locked"]//text()')
+            if ban:
+                print(ban[0])
+                return [], '禁言-' + title
             wait = WebDriverWait(driver, 180)
             wait.until(EC.presence_of_element_located((By.XPATH, '//img[starts-with(@id,"aimg")]')))
             page_source = driver.page_source
             selector = etree.HTML(page_source)
-            title = selector.xpath("//span[@id='thread_subject']/text()")[0]
             # pic_url_list = selector.xpath('//img[starts-with(@id,"aimg")]/@file')
             pic_url_list = selector.xpath('//ignore_js_op//img/@file')
 
@@ -93,7 +98,7 @@ class SexBar(NinePorn):
             print(traceback.format_exc())
             return [], '失败-' + title
 
-
+    @count_time
     def get_next_page(self):
         for i in range(5):
             try:
@@ -130,4 +135,5 @@ class SexBar(NinePorn):
 if __name__ == '__main__':
     sexbar = SexBar()
     sexbar.main()
+    # print(sexbar.get_pic_list('https://sex8.cc/thread-1220722-1-219.html'))
     # caoliu.download('https://www.t66y.com/htm_data/1907/16/3597142.html')
