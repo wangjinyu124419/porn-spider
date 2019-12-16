@@ -93,7 +93,7 @@ class CaoLiu(NinePorn):
     #     else:
     #         print(traceback.format_exc())
     #         print('save_pic失败：%s' % url)
-
+    @count_time
     def get_next_page(self):
         for i in range(5):
             try:
