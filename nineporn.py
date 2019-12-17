@@ -12,7 +12,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import traceback
 import re
 
-driver = webdriver.Chrome()
+
 
 def count_time(fun):
     def warpper(*args):
@@ -25,9 +25,20 @@ def count_time(fun):
     return warpper
 
 class NinePorn():
-    pre_url = 'https://f.wonderfulday28.live/'
-    finish_file = 'nineporn.txt'
     def __init__(self,type=None):
+        #禁止网页加载图片，但是能正常获取图片url，提高爬取速度
+        #https://stackoverflow.com/questions/28070315/python-disable-images-in-selenium-google-chromedriver/31581387#31581387
+        chrome_options = webdriver.ChromeOptions()
+        prefs = {"profile.managed_default_content_settings.images": 2}
+        chrome_options.add_experimental_option("prefs", prefs)
+        self.driver = webdriver.Chrome(chrome_options=chrome_options)
+        # self.driver = webdriver.Chrome()
+        self.pre_url = 'https://f.wonderfulday28.live/'
+        self.finish_file = 'nineporn.txt'
+        self.proxies = {
+            'http': 'http://127.0.0.1:1080',
+            'https': 'https://127.0.0.1:1080',
+        }
         if type=='gem':
             print('下载精华帖')
             self.page_url = 'https://f.wonderfulday28.live/forumdisplay.php?fid=19&filter=digest&page=1'
@@ -49,10 +60,10 @@ class NinePorn():
     @count_time
     def get_url_list(self):
         try:
-            driver.get(self.page_url)
-            wait = WebDriverWait(driver, 30)
+            self.driver.get(self.page_url)
+            wait = WebDriverWait(self.driver, 30)
             wait.until(EC.presence_of_element_located((By.XPATH, "//span[starts-with(@id,'thread')]/a")))
-            page_source = driver.page_source
+            page_source = self.driver.page_source
             selector = etree.HTML(page_source)
             url_list = selector.xpath("//span[starts-with(@id,'thread')]/a/@href")
         except Exception:
@@ -65,11 +76,11 @@ class NinePorn():
     def get_pic_list(self, detail_url):
         title = ''
         try:
-            driver.get(detail_url)
-            driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
-            wait = WebDriverWait(driver, 10)
+            self.driver.get(detail_url)
+            self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
+            wait = WebDriverWait(self.driver, 10)
             wait.until(EC.presence_of_element_located((By.XPATH, "//div[@id='threadtitle']/h1")))
-            page_source = driver.page_source
+            page_source = self.driver.page_source
             selector = etree.HTML(page_source)
             title = selector.xpath("//div[@id='threadtitle']/h1/text()")[0]
             block = selector.xpath('//div[@id="threadtitle"]/../div[@class="locked"]')
@@ -90,9 +101,9 @@ class NinePorn():
             if author=='admin':
                 return [],'管理员贴-'+title
 
-            wait = WebDriverWait(driver, 100)
+            wait = WebDriverWait(self.driver, 100)
             wait.until(EC.presence_of_element_located((By.XPATH, "//img[starts-with(@file,'attachments')]")))
-            page_source = driver.page_source
+            page_source = self.driver.page_source
             selector = etree.HTML(page_source)
             pic_url_list = selector.xpath("//img[starts-with(@file,'attachments')]/@file")
             print("pic_url_list:%s, url:%s" % (len(pic_url_list), detail_url))
@@ -128,7 +139,6 @@ class NinePorn():
             print(traceback.format_exc())
             print('save_pic失败：%s' % url)
 
-
     @count_time
     def download(self, detail_url):
         pic_list, title = self.get_pic_list(detail_url)
@@ -153,10 +163,10 @@ class NinePorn():
     def get_next_page(self):
         for i in range(3):
             try:
-                driver.get(self.page_url)
-                wait = WebDriverWait(driver, 60)
+                self.driver.get(self.page_url)
+                wait = WebDriverWait(self.driver, 60)
                 wait.until(EC.presence_of_element_located((By.XPATH, '//a[@class="next"]')))
-                page_source = driver.page_source
+                page_source = self.driver.page_source
                 selector = etree.HTML(page_source)
                 next_page = selector.xpath('//div[@class="pages"]/a[@class="next"]/text()')
                 print('next_page:%s' % next_page[0])
@@ -169,7 +179,6 @@ class NinePorn():
                 time.sleep(i*10)
                 continue
         return False
-
 
     def record_finish_url(self, finish_url, title):
         try:
@@ -212,14 +221,14 @@ class NinePorn():
             next_page = self.get_next_page()
             if not next_page:
                 print('最后一页:%s'%self.page_url)
-                driver.close()
+                self.driver.close()
                 break
 
 
 if __name__ == '__main__':
     # gem = NinePorn('gem')
     # gem.main()
-    hot = NinePorn('hot')
-    hot.main()
-    # all = NinePorn('all')
-    # all.main()
+    # hot = NinePorn('hot')
+    # hot.main()
+    all = NinePorn('all')
+    all.main()

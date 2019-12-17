@@ -3,16 +3,13 @@ from config import USERNAME,PASSWORD
 
 
 class SexBar(NinePorn):
-    proxies = {
-        'http': 'http://127.0.0.1:1080',
-        'https': 'https://127.0.0.1:1080',
-    }
-    root_dir = r'K:\爬虫\sexbar'
-    finish_file = 'sexbar.txt'
-    login_url = 'http://sex8.cc/portal.html'
-    page_url = 'http://sex8.cc/forum-111-1.html'
-    pre_url = 'http://sex8.cc/'
     def __init__(self,username=None,password=None):
+        super().__init__()
+        self.root_dir = r'K:\爬虫\sexbar'
+        self.finish_file = 'sexbar.txt'
+        self.login_url = 'http://sex8.cc/portal.html'
+        self.page_url = 'http://sex8.cc/forum-111-1.html'
+        self.pre_url = 'http://sex8.cc/'
         if not username:
             self.username=USERNAME
         if not password:
@@ -22,19 +19,19 @@ class SexBar(NinePorn):
     def login(self):
         for i in range(5):
             try:
-                driver.get(self.login_url)
-                wait = WebDriverWait(driver, 60)
+                self.driver.get(self.login_url)
+                wait = WebDriverWait(self.driver, 60)
                 wait.until(EC.presence_of_element_located((By.ID, 'login_btn')))
-                driver.maximize_window()
-                ad_btn = driver.find_element_by_xpath("//a[@class='close_index']")
+                self.driver.maximize_window()
+                ad_btn = self.driver.find_element_by_xpath("//a[@class='close_index']")
                 if ad_btn:
                     ad_btn.click()
-                login_btn = driver.find_element_by_xpath("//div[@id='login_btn']")
+                login_btn = self.driver.find_element_by_xpath("//div[@id='login_btn']")
                 login_btn.click()
                 wait.until(EC.presence_of_element_located((By.NAME, 'username')))
-                username = driver.find_element_by_xpath("//input[@name='username']")
-                password = driver.find_element_by_xpath("//input[@name='password']")
-                enter = driver.find_element_by_xpath("//button[@name='loginsubmit']")
+                username = self.driver.find_element_by_xpath("//input[@name='username']")
+                password = self.driver.find_element_by_xpath("//input[@name='password']")
+                enter = self.driver.find_element_by_xpath("//button[@name='loginsubmit']")
                 username.send_keys(self.username)
                 password.send_keys(self.password)
                 enter.click()
@@ -44,14 +41,13 @@ class SexBar(NinePorn):
                 continue
         print("登录失败")
 
-
     @count_time
     def get_url_list(self):
         try:
-            driver.get(self.page_url)
-            wait = WebDriverWait(driver, 60)
+            self.driver.get(self.page_url)
+            wait = WebDriverWait(self.driver, 60)
             wait.until(EC.presence_of_element_located((By.XPATH, '//tbody[starts-with(@id,"normalthread")]/tr[2]//a')))
-            page_source = driver.page_source
+            page_source = self.driver.page_source
             selector = etree.HTML(page_source)
             url_list = selector.xpath('//tbody[starts-with(@id,"normalthread")]/tr[2]//a/@href')
         except Exception:
@@ -64,20 +60,20 @@ class SexBar(NinePorn):
     def get_pic_list(self, detail_url):
         title = ''
         try:
-            driver.get(detail_url)
-            wait = WebDriverWait(driver, 120)
+            self.driver.get(detail_url)
+            wait = WebDriverWait(self.driver, 120)
             wait.until(EC.presence_of_element_located((By.XPATH, '//span[@id="thread_subject"]')))
-            driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
-            page_source = driver.page_source
+            self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
+            page_source = self.driver.page_source
             selector = etree.HTML(page_source)
             title = selector.xpath("//span[@id='thread_subject']/text()")[0]
             ban = selector.xpath('//div[@id="postlist"]/div[1]//div[@class="locked"]//text()')
             if ban:
                 print(ban[0])
                 return [], '禁言-' + title
-            wait = WebDriverWait(driver, 180)
+            wait = WebDriverWait(self.driver, 180)
             wait.until(EC.presence_of_element_located((By.XPATH, '//img[starts-with(@id,"aimg")]')))
-            page_source = driver.page_source
+            page_source = self.driver.page_source
             selector = etree.HTML(page_source)
             # pic_url_list = selector.xpath('//img[starts-with(@id,"aimg")]/@file')
             pic_url_list = selector.xpath('//ignore_js_op//img/@file')
@@ -100,12 +96,12 @@ class SexBar(NinePorn):
 
     @count_time
     def get_next_page(self):
-        for i in range(5):
+        for i in range(3):
             try:
-                driver.get(self.page_url)
-                wait = WebDriverWait(driver, 60)
+                self.driver.get(self.page_url)
+                wait = WebDriverWait(self.driver, 60)
                 wait.until(EC.presence_of_element_located((By.XPATH, '//a[text()="下一页"]')))
-                page_source = driver.page_source
+                page_source = self.driver.page_source
                 selector = etree.HTML(page_source)
                 next_page = selector.xpath('//a[text()="下一页"]/text()')
                 print('next_page:%s' % next_page[0])

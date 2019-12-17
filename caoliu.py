@@ -11,24 +11,23 @@ from nineporn import *
 
 
 class CaoLiu(NinePorn):
-    proxies = {
-        'http': 'http://127.0.0.1:1080',
-        'https': 'https://127.0.0.1:1080',
-    }
-    root_dir = r'K:\爬虫\1024'
-    page_url = 'http://t66y.com/thread0806.php?fid=16&search=&page=1'
-    pre_url = 'http://t66y.com/'
-    finish_file = 'caoliu..txt'
+
     def __init__(self):
-        pass
+        super().__init__()
+        self.root_dir = r'K:\爬虫\1024'
+        self.page_url = 'http://t66y.com/thread0806.php?fid=16&search=&page=1'
+        self.pre_url = 'http://t66y.com/'
+        self.finish_file = 'caoliu..txt'
+
 
     @count_time
     def get_url_list(self):
         try:
-            driver.get(self.page_url)
-            wait = WebDriverWait(driver, 60)
+            self.driver.get(self.page_url)
+            self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
+            wait = WebDriverWait(self.driver, 60)
             wait.until(EC.presence_of_element_located((By.XPATH, '//tbody/tr[position()>11]/td[2]/h3/a')))
-            page_source = driver.page_source
+            page_source = self.driver.page_source
             selector = etree.HTML(page_source)
             url_list = selector.xpath("//tbody/tr[position()>11]/td[2]/h3/a/@href")
         except Exception:
@@ -41,23 +40,23 @@ class CaoLiu(NinePorn):
     def get_pic_list(self, detail_url):
         title = ''
         try:
-            driver.get(detail_url)
-            driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
-            wait = WebDriverWait(driver, 120)
+            self.driver.get(detail_url)
+            self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
+            wait = WebDriverWait(self.driver, 120)
             wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="main"]/div[2]/table/tbody/tr/td')))
-            page_source = driver.page_source
+            page_source = self.driver.page_source
             selector = etree.HTML(page_source)
             title = selector.xpath("//h4/text()")[0]
             # try:
-            wait = WebDriverWait(driver, 300)
+            wait = WebDriverWait(self.driver, 300)
             wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='tpc_content do_not_catch']")))
             # wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='tpc_content do_not_catch']//img")))
             print('wait1:%s'%detail_url)
             # except Exception:
-            #     wait = WebDriverWait(driver, 100)
+            #     wait = WebDriverWait(self.driver, 100)
             #     wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='tpc_content do_not_catch']//input")))
             #     print('wait2:%s'%detail_url)
-            # page_source = driver.page_source
+            # page_source = self.driver.page_source
             # selector = etree.HTML(page_source)
             pic_url_list = selector.xpath("//div[@class='tpc_content do_not_catch']//@src")
             print("pic_url_list:%s, url:%s" % (len(pic_url_list), detail_url))
@@ -97,10 +96,10 @@ class CaoLiu(NinePorn):
     def get_next_page(self):
         for i in range(5):
             try:
-                driver.get(self.page_url)
-                wait = WebDriverWait(driver, 60)
+                self.driver.get(self.page_url)
+                wait = WebDriverWait(self.driver, 60)
                 wait.until(EC.presence_of_element_located((By.XPATH, '//a[text()="下一頁"]')))
-                page_source = driver.page_source
+                page_source = self.driver.page_source
                 selector = etree.HTML(page_source)
                 next_page = selector.xpath('//a[text()="下一頁"]/text()')
                 print('next_page:%s' % next_page[0])
