@@ -1,14 +1,5 @@
 from nineporn import *
 
-# 进入浏览器设置
-# options = webdriver.ChromeOptions()
-# # 设置中文
-# options.add_argument('lang=zh_CN.UTF-8')
-# # 更换头部
-# #User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36
-# options.add_argument('user-agent="Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36"')
-# driver = webdriver.Chrome(chrome_options=options)
-
 
 class CaoLiu(NinePorn):
 
@@ -17,15 +8,14 @@ class CaoLiu(NinePorn):
         self.root_dir = r'K:\爬虫\1024'
         self.page_url = 'http://t66y.com/thread0806.php?fid=16&search=&page=1'
         self.pre_url = 'http://t66y.com/'
-        self.finish_file = 'caoliu..txt'
-
+        self.finish_file = 'caoliu.txt'
 
     @count_time
     def get_url_list(self):
         try:
             self.driver.get(self.page_url)
             self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
-            wait = WebDriverWait(self.driver, 60)
+            wait = WebDriverWait(self.driver, self.url_list_time)
             wait.until(EC.presence_of_element_located((By.XPATH, '//tbody/tr[position()>11]/td[2]/h3/a')))
             page_source = self.driver.page_source
             selector = etree.HTML(page_source)
@@ -42,22 +32,13 @@ class CaoLiu(NinePorn):
         try:
             self.driver.get(detail_url)
             self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
-            wait = WebDriverWait(self.driver, 120)
+            wait = WebDriverWait(self.driver, self.title_time)
             wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="main"]/div[2]/table/tbody/tr/td')))
             page_source = self.driver.page_source
             selector = etree.HTML(page_source)
             title = selector.xpath("//h4/text()")[0]
-            # try:
-            wait = WebDriverWait(self.driver, 300)
+            wait = WebDriverWait(self.driver, self.pic_list_time)
             wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='tpc_content do_not_catch']")))
-            # wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='tpc_content do_not_catch']//img")))
-            print('wait1:%s'%detail_url)
-            # except Exception:
-            #     wait = WebDriverWait(self.driver, 100)
-            #     wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='tpc_content do_not_catch']//input")))
-            #     print('wait2:%s'%detail_url)
-            # page_source = self.driver.page_source
-            # selector = etree.HTML(page_source)
             pic_url_list = selector.xpath("//div[@class='tpc_content do_not_catch']//@src")
             print("pic_url_list:%s, url:%s" % (len(pic_url_list), detail_url))
             if not pic_url_list:
@@ -68,36 +49,12 @@ class CaoLiu(NinePorn):
             print(traceback.format_exc())
             return [], '失败-' + title
 
-    # def save_pic(self, url, path):
-    #     name = url.split('/')[-1]
-    #     pic_path = os.path.join(self.root_dir, path, name)
-    #     if os.path.exists(pic_path):
-    #         print('文件已存在:%s' % pic_path)
-    #         return
-    #     for i in range(5):
-    #         try:
-    #             status_code = requests.get(url, proxies=self.proxies, timeout=10).status_code
-    #             if status_code != 200:
-    #                 print("status_code:%s,url:%s" % (status_code,url))
-    #                 return
-    #             content = requests.get(url, proxies=self.proxies, timeout=20).content
-    #             with open(pic_path, 'wb') as f:
-    #                 f.write(content)
-    #                 print(pic_path)
-    #                 break
-    #         except Exception as e:
-    #             print('save_pic失败第%d次'%(i+1),e)
-    #             time.sleep(i)
-    #             continue
-    #     else:
-    #         print(traceback.format_exc())
-    #         print('save_pic失败：%s' % url)
     @count_time
     def get_next_page(self):
         for i in range(5):
             try:
                 self.driver.get(self.page_url)
-                wait = WebDriverWait(self.driver, 60)
+                wait = WebDriverWait(self.driver, self.next_page_time)
                 wait.until(EC.presence_of_element_located((By.XPATH, '//a[text()="下一頁"]')))
                 page_source = self.driver.page_source
                 selector = etree.HTML(page_source)
@@ -115,17 +72,17 @@ class CaoLiu(NinePorn):
     def check_repeat_url(self, url):
         try:
             # unique_key=url.split("/")[-1]
-            unique_key=re.match('.*(\d{7}).*', url).group(1)
+            unique_key = re.match('.*(\d{7}).*', url).group(1)
             with open(self.finish_file, 'r', encoding='utf8') as f:
                 content_list = f.readlines()
-                for  content in content_list:
+                for content in content_list:
                     if unique_key in content:
                         print('已经下载过：%s' % (content.strip()))
                         return True
         except Exception:
             print(traceback.format_exc())
 
+
 if __name__ == '__main__':
     caoliu = CaoLiu()
     caoliu.main()
-    # caoliu.download('https://www.t66y.com/htm_data/1907/16/3597142.html')

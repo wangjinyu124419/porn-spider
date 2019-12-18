@@ -33,6 +33,11 @@ class NinePorn():
         chrome_options.add_experimental_option("prefs", prefs)
         self.driver = webdriver.Chrome(chrome_options=chrome_options)
         # self.driver = webdriver.Chrome()
+        self.url_list_time = 30
+        self.pic_list_time = 30
+        self.title_time= 30
+        self.next_page_time = 60
+        self.login_time = 60
         self.pre_url = 'https://f.wonderfulday28.live/'
         self.finish_file = 'nineporn.txt'
         self.proxies = {
@@ -78,7 +83,7 @@ class NinePorn():
         try:
             self.driver.get(detail_url)
             self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
-            wait = WebDriverWait(self.driver, 10)
+            wait = WebDriverWait(self.driver, self.title_time)
             wait.until(EC.presence_of_element_located((By.XPATH, "//div[@id='threadtitle']/h1")))
             page_source = self.driver.page_source
             selector = etree.HTML(page_source)
@@ -101,7 +106,7 @@ class NinePorn():
             if author=='admin':
                 return [],'管理员贴-'+title
 
-            wait = WebDriverWait(self.driver, 100)
+            wait = WebDriverWait(self.driver, self.pic_list_time)
             wait.until(EC.presence_of_element_located((By.XPATH, "//img[starts-with(@file,'attachments')]")))
             page_source = self.driver.page_source
             selector = etree.HTML(page_source)
@@ -164,7 +169,7 @@ class NinePorn():
         for i in range(3):
             try:
                 self.driver.get(self.page_url)
-                wait = WebDriverWait(self.driver, 60)
+                wait = WebDriverWait(self.driver, self.next_page_time)
                 wait.until(EC.presence_of_element_located((By.XPATH, '//a[@class="next"]')))
                 page_source = self.driver.page_source
                 selector = etree.HTML(page_source)
@@ -202,8 +207,6 @@ class NinePorn():
 
     @count_time
     def main(self):
-        # if 'sex8' in self.page_url:
-        #     self.login()
         while True:
             url_list = self.get_url_list()
             for url in url_list:
@@ -226,9 +229,9 @@ class NinePorn():
 
 
 if __name__ == '__main__':
-    # gem = NinePorn('gem')
-    # gem.main()
-    # hot = NinePorn('hot')
-    # hot.main()
+    gem = NinePorn('gem')
+    gem.main()
+    hot = NinePorn('hot')
+    hot.main()
     all = NinePorn('all')
     all.main()
