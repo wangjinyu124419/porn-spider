@@ -72,12 +72,7 @@ class SexBar(NinePorn):
             if ban:
                 print(ban[0])
                 return [], '禁言-' + title
-            wait = WebDriverWait(self.driver, self.pic_list_time)
-            wait.until(EC.presence_of_element_located((By.XPATH, '//img[starts-with(@id,"aimg")]')))
-            page_source = self.driver.page_source
-            selector = etree.HTML(page_source)
             pic_url_list = selector.xpath('//ignore_js_op//img/@file')
-
             if not pic_url_list:
                 pic_url_list = selector.xpath('//ignore_js_op//img/@src')
 
