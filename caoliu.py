@@ -29,15 +29,19 @@ class CaoLiu(NinePorn):
     @count_time
     def get_pic_list(self, detail_url):
         title = ''
+        self.chrome_options.add_argument('headless')
+        self.chrome_options.add_argument("--window-size=0,0")
+
+        driver = webdriver.Chrome(chrome_options=self.chrome_options)
         try:
-            self.driver.get(detail_url)
-            self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
-            wait = WebDriverWait(self.driver, self.title_time)
+            driver.get(detail_url)
+            driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
+            wait = WebDriverWait(driver, self.title_time)
             wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="main"]/div[2]/table/tbody/tr/td')))
-            page_source = self.driver.page_source
+            page_source = driver.page_source
             selector = etree.HTML(page_source)
             title = selector.xpath("//h4/text()")[0]
-            wait = WebDriverWait(self.driver, self.pic_list_time)
+            wait = WebDriverWait(driver, self.pic_list_time)
             wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='tpc_content do_not_catch']")))
             pic_url_list = selector.xpath("//div[@class='tpc_content do_not_catch']//@src")
             print("pic_url_list:%s, url:%s" % (len(pic_url_list), detail_url))
@@ -48,13 +52,15 @@ class CaoLiu(NinePorn):
             print('get_pic_list失败：%s' % detail_url)
             print(traceback.format_exc())
             return [], '失败-' + title
+        finally:
+            driver.close()
 
     @count_time
     def get_next_page(self):
         for i in range(5):
             try:
                 self.driver.get(self.page_url)
-                wait = WebDriverWait(self.driver, self.next_page_time)
+                wait = WebDriverWait(self.driver, self.next_page_time*(i+1))
                 wait.until(EC.presence_of_element_located((By.XPATH, '//a[text()="下一頁"]')))
                 page_source = self.driver.page_source
                 selector = etree.HTML(page_source)

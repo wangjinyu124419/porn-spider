@@ -92,7 +92,7 @@ class SexBar(NinePorn):
         for i in range(3):
             try:
                 self.driver.get(self.page_url)
-                wait = WebDriverWait(self.driver, self.next_page_time)
+                wait = WebDriverWait(self.driver, self.next_page_time*(i+1))
                 wait.until(EC.presence_of_element_located((By.XPATH, '//a[text()="下一页"]')))
                 page_source = self.driver.page_source
                 selector = etree.HTML(page_source)
