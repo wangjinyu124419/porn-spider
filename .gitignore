@@ -6,6 +6,7 @@ __pycache__/
 # C extensions
 *.so
 *.txt
+!requirements.txt
 other
 config.py
 sexbar_oneperson.py
