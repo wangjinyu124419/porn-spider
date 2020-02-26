@@ -34,7 +34,7 @@ class NinePorn():
         #禁止网页加载图片，但是能正常获取图片url，提高爬取速度
         #https://stackoverflow.com/questions/28070315/python-disable-images-in-selenium-google-chromedriver/31581387#31581387
         chrome_options = webdriver.ChromeOptions()
-        # chrome_options.add_argument('headless')
+        chrome_options.add_argument('headless')
         # chrome_options.add_argument("--window-size=0,0")
 
         prefs = {"profile.managed_default_content_settings.images": 2}
@@ -76,7 +76,7 @@ class NinePorn():
     @count_time
     def get_pic_list(self, detail_url):
         title = ''
-        # self.chrome_options.add_argument('headless')
+        self.chrome_options.add_argument('headless')
         driver = webdriver.Chrome(chrome_options=self.chrome_options)
         # driver = webdriver.Chrome()
 
