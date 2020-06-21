@@ -1,6 +1,8 @@
+from functools import wraps
+
 import gevent
 from gevent import monkey
-gevent.monkey.patch_all()
+gevent.monkey.patch_all(thread=False)
 import os
 import time
 import requests
@@ -11,11 +13,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import traceback
 import re
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+# from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from concurrent.futures.process import ProcessPoolExecutor
+from concurrent.futures.thread import ThreadPoolExecutor
 from concurrent.futures import as_completed
 
 
 def count_time(fun):
+    @wraps(fun)
     def warpper(*args):
         s_time = time.time()
         res = fun(*args)
@@ -35,27 +40,29 @@ class NinePorn():
         #https://stackoverflow.com/questions/28070315/python-disable-images-in-selenium-google-chromedriver/31581387#31581387
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument('headless')
-        chrome_options.add_argument("--window-size=0,0")
+        # chrome_options.add_argument("--window-size=0,0")
 
         prefs = {"profile.managed_default_content_settings.images": 2}
         chrome_options.add_experimental_option("prefs", prefs)
         self.driver = webdriver.Chrome(chrome_options=chrome_options)
-        self.driver.minimize_window()
+        # self.driver.minimize_window()
         # self.driver = webdriver.Chrome()
         self.url_list_time = 30
         self.pic_list_time = 30
         self.title_time= 30
         self.next_page_time = 60
         self.login_time = 60
-        self.pre_url = 'https://f.wonderfulday28.live/'
+        self.pre_url = 'https://f.wonderfulday25.live/'
         self.finish_file = 'nineporn.txt'
+        self.repeat_num = 0
         self.proxies = {
             'http': 'http://127.0.0.1:1080',
             'https': 'https://127.0.0.1:1080',
         }
         if type=='gem':
             print('下载精华帖')
-            self.page_url = 'https://f.wonderfulday28.live/forumdisplay.php?fid=19&filter=digest&page=1'
+            # self.page_url = 'https://f.wonderfulday28.live/forumdisplay.php?fid=19&filter=digest&page=1'
+            self.page_url = 'http://f.wonderfulday25.live/forumdisplay.php?fid=19&filter=digest&page=1'
             self.root_dir = r'K:\爬虫\91精华'
         elif type=='hot':
             print('下载热门贴')
@@ -75,18 +82,21 @@ class NinePorn():
     def get_url_list(self):
         try:
             self.driver.get(self.page_url)
+            self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
             wait = WebDriverWait(self.driver, 30)
             wait.until(EC.presence_of_element_located((By.XPATH, "//span[starts-with(@id,'thread')]/a")))
             page_source = self.driver.page_source
             selector = etree.HTML(page_source)
             url_list = selector.xpath("//span[starts-with(@id,'thread')]/a/@href")
+            fix_url_list = [ url if url.startswith('http') else self.pre_url+url  for url in url_list]
         except Exception:
             print(traceback.format_exc())
+            print(self.page_url)
             return []
         print('%s:url_list获取完成:%s'%(len(url_list),self.page_url))
-        return url_list
+        return fix_url_list
 
-    @count_time
+    # @count_time
     def get_pic_list(self, detail_url):
         title = ''
         self.chrome_options.add_argument('headless')
@@ -121,13 +131,15 @@ class NinePorn():
                 return [],'管理员贴-'+title
 
             wait = WebDriverWait(driver, self.pic_list_time)
-            wait.until(EC.presence_of_element_located((By.XPATH, "//img[starts-with(@file,'attachments')]")))
+            wait.until(EC.presence_of_element_located((By.XPATH, "//img[starts-with(@file,'http')]")))
             page_source = driver.page_source
             selector = etree.HTML(page_source)
-            pic_url_list = selector.xpath("//img[starts-with(@file,'attachments')]/@file")
-            print("pic_url_list:%s, url:%s" % (len(pic_url_list), detail_url))
-            pic_url_list=[self.pre_url+pic_url for pic_url in pic_url_list]
-            return pic_url_list, title
+            pic_url_list = selector.xpath("//img[starts-with(@file,'http')]/@file")
+            fix_pic_url_list = [ pic_url if pic_url.startswith('http') else self.pre_url+pic_url  for pic_url in pic_url_list]
+            print("fix_pic_url_list:%s, url:%s" % (len(pic_url_list), detail_url))
+            # pic_url_list=[self.pre_url+pic_url for pic_url in pic_url_list]
+            # pic_url_list=[self.pre_url+pic_url for pic_url in pic_url_list]
+            return fix_pic_url_list, title
         except Exception:
             print('get_pic_list失败：%s'%detail_url)
             print(traceback.format_exc())
@@ -143,9 +155,10 @@ class NinePorn():
             return
         for i in range(5):
             try:
-                status_code = requests.get(url,timeout=(i+1)*10).status_code
+                status_code = requests.get(url,timeout=(i+1)*10,proxies=self.proxies).status_code
                 if status_code != 200:
                     print("status_code:%s" % status_code)
+                    print("url:%s" % url)
                     return
                 content = requests.get(url,timeout=(i+1)*10).content
                 with open(pic_path, 'wb') as f:
@@ -170,7 +183,8 @@ class NinePorn():
             return
         print('开始下载:%s' % detail_url)
 
-        legal_title = re.sub(r"[\/\\\:\*\?\"\<\>\|!！\.\s]", "", title)
+        # legal_title = re.sub(r"[\/\\\:\*\?\"\<\>\|!！\.\s]", "", title)
+        legal_title = re.sub(r"[^\w]", "", title)
         path = os.path.join(self.root_dir, legal_title)
 
         if not os.path.exists(path):
@@ -212,13 +226,14 @@ class NinePorn():
 
     def check_repeat_url(self, url):
         try:
-            tran_url=url.split("&")[0]
+            # tran_url=url.split("&")[0]
             with open(self.finish_file, 'r', encoding='utf8') as f:
-                content_list = f.readlines()
-                for  content in content_list:
-                    if tran_url in content:
-                        print('已经下载过：%s' % (content.strip()))
-                        return True
+                content = f.read()
+                if url in content:
+                    self.repeat_num+=1
+                    print('repeat_num:%s'%self.repeat_num)
+                    print('已经下载过：%s' % (url))
+                    return True
         except Exception:
             print(traceback.format_exc())
 
@@ -228,8 +243,8 @@ class NinePorn():
             url_list = self.get_url_list()
             with ThreadPoolExecutor(max_workers=10) as executor:
             # with ThreadPoolExecutor() as executor:
-                t_dict = {executor.submit(self.download, self.pre_url+pic_t): pic_t for pic_t in url_list if
-                          not self.check_repeat_url(self.pre_url+pic_t)}
+                t_dict = {executor.submit(self.download, url): url for url in url_list if
+                          not self.check_repeat_url(url)}
                 for future in as_completed(t_dict):
                     url = t_dict[future]
                     try:
@@ -239,6 +254,11 @@ class NinePorn():
                     else:
                         if title:
                                 self.record_finish_url(self.pre_url+url, title)
+
+            if self.repeat_num>100:
+                print('重复帖子过多')
+                return
+
             # for url in url_list:
             #     full_url = self.pre_url + url
             #     if self.check_repeat_url(full_url):
@@ -255,7 +275,7 @@ class NinePorn():
             if not next_page:
                 print('最后一页:%s'%self.page_url)
                 self.driver.close()
-                break
+                return
 
 
 if __name__ == '__main__':

@@ -25,12 +25,12 @@ def count_time(fun):
         return res
     return warpper
 
-class NinePorn():
+class Xhamster():
     chrome_options = webdriver.ChromeOptions()
     prefs = {"profile.managed_default_content_settings.images": 2}
     chrome_options.add_experimental_option("prefs", prefs)
 
-    def __init__(self,type=None):
+    def __init__(self,username,type=None,):
         #禁止网页加载图片，但是能正常获取图片url，提高爬取速度
         #https://stackoverflow.com/questions/28070315/python-disable-images-in-selenium-google-chromedriver/31581387#31581387
         chrome_options = webdriver.ChromeOptions()
@@ -42,9 +42,9 @@ class NinePorn():
         self.driver = webdriver.Chrome(chrome_options=chrome_options)
         self.driver.minimize_window()
         # self.driver = webdriver.Chrome()
-        self.url_list_time = 30
-        self.pic_list_time = 30
-        self.title_time= 30
+        self.url_list_time = 60
+        self.pic_list_time = 60
+        self.title_time= 60
         self.next_page_time = 60
         self.login_time = 60
         self.pre_url = 'https://xhamster2.com'
@@ -54,14 +54,14 @@ class NinePorn():
             'https': 'https://127.0.0.1:1080',
         }
 
-        self.page_url = 'https://xhamster2.com/users/fuma425/photos'
+        self.page_url = 'https://xhamster2.com/users/{}/photos'.format(username)
         self.root_dir = r'K:\爬虫\xhamster2'
         self.headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36'}
     @count_time
     def get_url_list(self):
         try:
             self.driver.get(self.page_url)
-            wait = WebDriverWait(self.driver, 30)
+            wait = WebDriverWait(self.driver, 60)
             wait.until(EC.presence_of_element_located((By.XPATH, '//a[@class="gallery-thumb__link thumb-image-container"]/img')))
             page_source = self.driver.page_source
             selector = etree.HTML(page_source)
@@ -235,5 +235,5 @@ class NinePorn():
 
 
 if __name__ == '__main__':
-    all = NinePorn()
-    all.main()
+    xhamster = Xhamster('nomyen')
+    xhamster.main()

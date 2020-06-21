@@ -10,7 +10,7 @@ class CaoLiu(NinePorn):
         self.pre_url = 'http://t66y.com/'
         self.finish_file = 'caoliu.txt'
 
-    @count_time
+    # @count_time
     def get_url_list(self):
         try:
             self.driver.get(self.page_url)
@@ -20,13 +20,15 @@ class CaoLiu(NinePorn):
             page_source = self.driver.page_source
             selector = etree.HTML(page_source)
             url_list = selector.xpath("//tbody/tr[position()>11]/td[2]/h3/a/@href")
+            fix_url_list = [ url if url.startswith('http') else self.pre_url+url  for url in url_list]
+
         except Exception:
             print(traceback.format_exc())
             return []
         print('url_list获取完成:%s' % self.page_url)
-        return url_list
+        return fix_url_list
 
-    @count_time
+    # @count_time
     def get_pic_list(self, detail_url):
         title = ''
         self.chrome_options.add_argument('headless')
@@ -45,9 +47,11 @@ class CaoLiu(NinePorn):
             wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='tpc_content do_not_catch']")))
             pic_url_list = selector.xpath("//div[@class='tpc_content do_not_catch']//@src")
             print("pic_url_list:%s, url:%s" % (len(pic_url_list), detail_url))
+            fix_pic_url_list = [ pic_url if pic_url.startswith('http') else self.pre_url+pic_url  for pic_url in pic_url_list]
+
             if not pic_url_list:
                 title = '空列表-' + title
-            return pic_url_list, title
+            return fix_pic_url_list, title
         except Exception:
             print('get_pic_list失败：%s' % detail_url)
             print(traceback.format_exc())
@@ -55,7 +59,7 @@ class CaoLiu(NinePorn):
         finally:
             driver.close()
 
-    @count_time
+    # @count_time
     def get_next_page(self):
         for i in range(5):
             try:
@@ -75,18 +79,20 @@ class CaoLiu(NinePorn):
                 print(traceback.format_exc())
                 continue
 
-    def check_repeat_url(self, url):
-        try:
-            # unique_key=url.split("/")[-1]
-            unique_key = re.match('.*(\d{7}).*', url).group(1)
-            with open(self.finish_file, 'r', encoding='utf8') as f:
-                content_list = f.readlines()
-                for content in content_list:
-                    if unique_key in content:
-                        print('已经下载过：%s' % (content.strip()))
-                        return True
-        except Exception:
-            print(traceback.format_exc())
+    # def check_repeat_url(self, url):
+    #     try:
+    #         # unique_key=url.split("/")[-1]
+    #         unique_key = re.match('.*(\d{7}).*', url).group(1)
+    #         with open(self.finish_file, 'r', encoding='utf8') as f:
+    #             content_list = f.readlines()
+    #             for content in content_list:
+    #                 if unique_key in content:
+    #                     self.repeat_num += 1
+    #                     print('repeat_num')
+    #                     print('已经下载过：%s' % (content.strip()))
+    #                     return True
+    #     except Exception:
+    #         print(traceback.format_exc())
 
 
 if __name__ == '__main__':
