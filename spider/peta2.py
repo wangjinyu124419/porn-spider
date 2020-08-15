@@ -5,9 +5,10 @@ class Peta(NinePorn):
     def __init__(self):
         super().__init__()
         self.root_dir = r'K:\爬虫\peta2'
-        self.page_url = 'https://5689.peta2.jp/1320286_1_ASC.html'
+        # self.page_url = 'https://5689.peta2.jp/1320286_1_ASC.html'
+        self.page_url = 'https://5689.peta2.jp/1900985.html'
         self.pre_url = 'https://5689.peta2.jp/'
-        self.finish_file = 'peta2.txt'
+        self.finish_file = '../file/peta2.txt'
     @count_time
     def get_pic_list(self, detail_url):
         try:
@@ -18,6 +19,8 @@ class Peta(NinePorn):
             page_source = self.driver.page_source
             selector = etree.HTML(page_source)
             pic_url_list = selector.xpath('//ul[@class="list-unstyled"]//img[@class="picture"]/@src')
+            save_title = selector.xpath('//div[@class="post-heading"]/h2/text()')[0]
+            self.save_title = save_title
             print("pic_url_list:%s, url:%s" % (len(pic_url_list), detail_url))
             return pic_url_list
         except Exception:
@@ -59,6 +62,8 @@ class Peta(NinePorn):
     @count_time
     def download(self, detail_url):
         pic_list = self.get_pic_list(detail_url)
+        if not os.path.exists(os.path.join(self.root_dir,self.save_title)):
+            os.makedirs(os.path.join(self.root_dir,self.save_title))
         if not pic_list:
             print('pic_list为空-%s:%s'%(detail_url))
             return
@@ -75,7 +80,7 @@ class Peta(NinePorn):
         except Exception as e:
             print(e,url)
             return
-        pic_path = os.path.join(self.root_dir, name)
+        pic_path = os.path.join(self.root_dir,self.save_title, name)
         if os.path.exists(pic_path):
             print('文件已存在:%s' % pic_path)
             return

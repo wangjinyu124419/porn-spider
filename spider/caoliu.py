@@ -8,7 +8,7 @@ class CaoLiu(NinePorn):
         self.root_dir = r'K:\爬虫\1024'
         self.page_url = 'http://t66y.com/thread0806.php?fid=16&search=&page=1'
         self.pre_url = 'http://t66y.com/'
-        self.finish_file = 'caoliu.txt'
+        self.finish_file = os.path.join(self.save_dir,'caoliu.txt')
 
     # @count_time
     def get_url_list(self):
@@ -78,21 +78,6 @@ class CaoLiu(NinePorn):
                 print('获取下一页失败：%s' % self.page_url)
                 print(traceback.format_exc())
                 continue
-
-    # def check_repeat_url(self, url):
-    #     try:
-    #         # unique_key=url.split("/")[-1]
-    #         unique_key = re.match('.*(\d{7}).*', url).group(1)
-    #         with open(self.finish_file, 'r', encoding='utf8') as f:
-    #             content_list = f.readlines()
-    #             for content in content_list:
-    #                 if unique_key in content:
-    #                     self.repeat_num += 1
-    #                     print('repeat_num')
-    #                     print('已经下载过：%s' % (content.strip()))
-    #                     return True
-    #     except Exception:
-    #         print(traceback.format_exc())
 
 
 if __name__ == '__main__':

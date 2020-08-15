@@ -235,5 +235,5 @@ class Xhamster():
 
 
 if __name__ == '__main__':
-    xhamster = Xhamster('nomyen')
+    xhamster = Xhamster('roadtoglory')
     xhamster.main()

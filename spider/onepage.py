@@ -120,6 +120,6 @@ class OnePage():
 
 if __name__ == '__main__':
     op=OnePage()
-    op.download('https://dark.fun1shot.com/article/17509')
+    op.download('http://archive.is/njt38')
 
 

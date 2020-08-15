@@ -6,7 +6,7 @@ class SexBar(NinePorn):
     def __init__(self,username=None,password=None):
         super().__init__()
         self.root_dir = r'K:\爬虫\sexbar'
-        self.finish_file = 'sexbar.txt'
+        self.finish_file = os.path.join(self.save_dir,'sexbar.txt')
         self.login_url = 'http://sex8.cc/portal.html'
         self.page_url = 'http://sex8.cc/forum-111-1.html'
         self.pre_url = 'http://sex8.cc/'
@@ -23,9 +23,10 @@ class SexBar(NinePorn):
                 wait = WebDriverWait(self.driver, self.login_time)
                 wait.until(EC.presence_of_element_located((By.ID, 'login_btn')))
                 self.driver.maximize_window()
-                ad_btn = self.driver.find_element_by_xpath("//a[@class='close_index']")
-                if ad_btn:
-                    ad_btn.click()
+
+                # ad_btn = self.driver.find_element_by_xpath("//a[@class='close_index']")
+                # if ad_btn:
+                #     ad_btn.click()
                 login_btn = self.driver.find_element_by_xpath("//div[@id='login_btn']")
                 login_btn.click()
                 wait.until(EC.presence_of_element_located((By.NAME, 'username')))
@@ -35,11 +36,14 @@ class SexBar(NinePorn):
                 username.send_keys(self.username)
                 password.send_keys(self.password)
                 enter.click()
-                break
-            except Exception:
+            except Exception as e:
+                print("登录失败:%s"%e)
                 time.sleep(i*5)
                 continue
-        print("登录失败")
+            else:
+                print('登录成功')
+                break
+
 
     @count_time
     def get_url_list(self):
@@ -116,21 +120,21 @@ class SexBar(NinePorn):
                 print(traceback.format_exc())
                 continue
 
-    # def check_repeat_url(self, url):
-    #     try:
-    #         # unique_key=url.split("/")[-1]
-    #         # unique_key=re.match('.*(\d).*', url).group(1)
-    #         #帖子的ID作为查重key
-    #         unique_key = re.match('.*thread-(\d*).*', url).group(1)
-    #         with open(self.finish_file, 'r', encoding='utf8') as f:
-    #             content_list = f.readlines()
-    #             for  content in content_list:
-    #                 if unique_key in content:
-    #                     print('已经下载过：%s' % (content.strip()))
-    #                     return True
-    #     except Exception:
-    #         print(traceback.format_exc())
-
+    def main(self):
+        while True:
+            self.login()
+            url_list = self.get_url_list()
+            for url in url_list:
+                if not self.check_repeat_url(url):
+                    self.download(url)
+            if self.repeat_num>100:
+                print('重复帖子过多')
+                return
+            next_page = self.get_next_page()
+            if not next_page:
+                print('最后一页:%s'%self.page_url)
+                self.driver.close()
+                return
 if __name__ == '__main__':
     sexbar = SexBar()
     sexbar.main()
