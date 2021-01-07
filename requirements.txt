@@ -27,7 +27,7 @@ ipython==7.10.2
 ipython-genutils==0.2.0
 iso8601==0.1.12
 jedi==0.15.2
-lxml==4.4.1
+lxml==4.6.2
 m3u8==0.5.3
 multidict==4.7.2
 numpy==1.18.0
