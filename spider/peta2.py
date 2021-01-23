@@ -4,11 +4,12 @@ from nineporn import *
 class Peta(NinePorn):
     def __init__(self):
         super().__init__()
-        self.root_dir = r'K:\爬虫\peta2'
+        self.root_dir = r'E:\爬虫\peta2'
         # self.page_url = 'https://5689.peta2.jp/1320286_1_ASC.html'
         self.page_url = 'https://5689.peta2.jp/1900985.html'
         self.pre_url = 'https://5689.peta2.jp/'
         self.finish_file = '../file/peta2.txt'
+
     @count_time
     def get_pic_list(self, detail_url):
         try:
@@ -62,10 +63,10 @@ class Peta(NinePorn):
     @count_time
     def download(self, detail_url):
         pic_list = self.get_pic_list(detail_url)
-        if not os.path.exists(os.path.join(self.root_dir,self.save_title)):
-            os.makedirs(os.path.join(self.root_dir,self.save_title))
+        if not os.path.exists(os.path.join(self.root_dir, self.save_title)):
+            os.makedirs(os.path.join(self.root_dir, self.save_title))
         if not pic_list:
-            print('pic_list为空-%s:%s'%(detail_url))
+            print('pic_list为空-%s:%s' % (detail_url))
             return
         print('开始下载:%s' % detail_url)
         g_list = []
@@ -74,29 +75,29 @@ class Peta(NinePorn):
         gevent.joinall(g_list)
 
     # @count_time
-    def save_pic(self,url):
+    def save_pic(self, url):
         try:
             name = re.match('.*(co_.*\.[a-zA-Z]{3})', url).group(1)
         except Exception as e:
-            print(e,url)
+            print(e, url)
             return
-        pic_path = os.path.join(self.root_dir,self.save_title, name)
+        pic_path = os.path.join(self.root_dir, self.save_title, name)
         if os.path.exists(pic_path):
             print('文件已存在:%s' % pic_path)
             return
         for i in range(5):
             try:
-                status_code = requests.get(url,timeout=10).status_code
+                status_code = requests.get(url, timeout=10).status_code
                 if status_code != 200:
                     print("status_code:%s" % status_code)
                     return
-                content = requests.get(url,timeout=20).content
+                content = requests.get(url, timeout=20).content
                 with open(pic_path, 'wb') as f:
                     f.write(content)
                     print(pic_path)
                     return
             except Exception as e:
-                print('保存失败第%d次，url:%s,异常信息:%s'%(i+1,url,e))
+                print('保存失败第%d次，url:%s,异常信息:%s' % (i + 1, url, e))
                 time.sleep(i)
                 continue
         else:
@@ -107,15 +108,16 @@ class Peta(NinePorn):
     def main(self):
         while True:
             try:
-                self.download( self.page_url)
+                self.download(self.page_url)
             except Exception:
                 print(traceback.format_exc())
-                print('download fail:%s' %  self.page_url)
+                print('download fail:%s' % self.page_url)
             next_page = self.get_next_page()
             if not next_page:
-                print('最后一页:%s'%self.page_url)
+                print('最后一页:%s' % self.page_url)
                 self.driver.close()
                 break
+
 
 if __name__ == '__main__':
     peta = Peta()

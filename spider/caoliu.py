@@ -1,40 +1,35 @@
-from nineporn import *
+from spider.nineporn import *
 
 
 class CaoLiu(NinePorn):
 
     def __init__(self):
         super().__init__()
-        self.root_dir = r'K:\爬虫\1024'
+        self.root_dir = r'E:\爬虫\1024'
         self.page_url = 'http://t66y.com/thread0806.php?fid=16&search=&page=1'
-        self.pre_url = 'http://t66y.com/'
-        self.finish_file = os.path.join(self.save_dir,'caoliu.txt')
+        self.finish_file = os.path.join(self.save_dir, 'caoliu.txt')
+        self.wait_xpath = '//tbody/tr[position()>11]/td[2]/h3/a'
+        self.url_list_xpath = '//tbody/tr[position()>11]/td[2]/h3/a/@href'
+        self.get_pre_process()
 
-    # @count_time
-    def get_url_list(self):
+    def check_repeat_url(self, url):
         try:
-            self.driver.get(self.page_url)
-            self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
-            wait = WebDriverWait(self.driver, self.url_list_time)
-            wait.until(EC.presence_of_element_located((By.XPATH, '//tbody/tr[position()>11]/td[2]/h3/a')))
-            page_source = self.driver.page_source
-            selector = etree.HTML(page_source)
-            url_list = selector.xpath("//tbody/tr[position()>11]/td[2]/h3/a/@href")
-            fix_url_list = [ url if url.startswith('http') else self.pre_url+url  for url in url_list]
-
+            parse_url = urlparse(url)
+            unique_str = os.path.basename(parse_url.path)
+            if unique_str in self.content:
+                self.repeat_num += 1
+                print('repeat_num:%s' % self.repeat_num)
+                print('已经下载过：%s' % (url))
+                return True
         except Exception:
             print(traceback.format_exc())
-            return []
-        print('url_list获取完成:%s' % self.page_url)
-        return fix_url_list
 
-    # @count_time
     def get_pic_list(self, detail_url):
         title = ''
-        self.chrome_options.add_argument('headless')
-        self.chrome_options.add_argument("--window-size=0,0")
+        self.options.add_argument('headless')
+        self.options.add_argument("--window-size=0,0")
 
-        driver = webdriver.Chrome(chrome_options=self.chrome_options)
+        driver = webdriver.Chrome(options=self.options)
         try:
             driver.get(detail_url)
             driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
@@ -47,8 +42,7 @@ class CaoLiu(NinePorn):
             wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='tpc_content do_not_catch']")))
             pic_url_list = selector.xpath("//div[@class='tpc_content do_not_catch']//@src")
             print("pic_url_list:%s, url:%s" % (len(pic_url_list), detail_url))
-            fix_pic_url_list = [ pic_url if pic_url.startswith('http') else self.pre_url+pic_url  for pic_url in pic_url_list]
-
+            fix_pic_url_list = [urljoin(self.pre_url, pic_url) for pic_url in pic_url_list]
             if not pic_url_list:
                 title = '空列表-' + title
             return fix_pic_url_list, title
@@ -59,18 +53,18 @@ class CaoLiu(NinePorn):
         finally:
             driver.close()
 
-    # @count_time
     def get_next_page(self):
         for i in range(5):
             try:
                 self.driver.get(self.page_url)
-                wait = WebDriverWait(self.driver, self.next_page_time*(i+1))
+                wait = WebDriverWait(self.driver, self.next_page_time * (i + 1))
                 wait.until(EC.presence_of_element_located((By.XPATH, '//a[text()="下一頁"]')))
                 page_source = self.driver.page_source
                 selector = etree.HTML(page_source)
                 next_page = selector.xpath('//a[text()="下一頁"]/text()')
                 print('next_page:%s' % next_page[0])
-                next_url = self.pre_url + selector.xpath('//a[text()="下一頁"]/@href')[0]
+                next_url = selector.xpath('//a[text()="下一頁"]/@href')[0]
+                next_url = urljoin(self.pre_url, next_url)
                 print('next_url:%s' % next_url)
                 self.page_url = next_url
                 return next_url
@@ -82,4 +76,4 @@ class CaoLiu(NinePorn):
 
 if __name__ == '__main__':
     caoliu = CaoLiu()
-    caoliu.main()
+    caoliu.main(mutil=False)

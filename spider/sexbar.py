@@ -1,19 +1,19 @@
+from config import USERNAME, PASSWORD
 from nineporn import *
-from config import USERNAME,PASSWORD
 
 
 class SexBar(NinePorn):
-    def __init__(self,username=None,password=None):
+    def __init__(self, username=None, password=None):
         super().__init__()
-        self.root_dir = r'K:\爬虫\sexbar'
-        self.finish_file = os.path.join(self.save_dir,'sexbar.txt')
+        self.root_dir = r'E:\爬虫\sexbar'
+        self.finish_file = os.path.join(self.save_dir, 'sexbar.txt')
         self.login_url = 'http://sex8.cc/portal.html'
         self.page_url = 'http://sex8.cc/forum-111-1.html'
         self.pre_url = 'http://sex8.cc/'
         if not username:
-            self.username=USERNAME
+            self.username = USERNAME
         if not password:
-            self.password=PASSWORD
+            self.password = PASSWORD
 
     @count_time
     def login(self):
@@ -37,13 +37,12 @@ class SexBar(NinePorn):
                 password.send_keys(self.password)
                 enter.click()
             except Exception as e:
-                print("登录失败:%s"%e)
-                time.sleep(i*5)
+                print("登录失败:%s" % e)
+                time.sleep(i * 5)
                 continue
             else:
                 print('登录成功')
                 break
-
 
     @count_time
     def get_url_list(self):
@@ -54,7 +53,7 @@ class SexBar(NinePorn):
             page_source = self.driver.page_source
             selector = etree.HTML(page_source)
             url_list = selector.xpath('//tbody[starts-with(@id,"normalthread")]/tr[2]//a/@href')
-            fix_url_list = [ url if url.startswith('http') else self.pre_url+url  for url in url_list]
+            fix_url_list = [url if url.startswith('http') else self.pre_url + url for url in url_list]
         except Exception:
             print(traceback.format_exc())
             return []
@@ -64,9 +63,9 @@ class SexBar(NinePorn):
     @count_time
     def get_pic_list(self, detail_url):
         title = ''
-        self.chrome_options.add_argument('headless')
-        self.chrome_options.add_argument("--window-size=0,0")
-        driver = webdriver.Chrome(chrome_options=self.chrome_options)
+        self.options.add_argument('headless')
+        self.options.add_argument("--window-size=0,0")
+        driver = webdriver.Chrome(options=self.options)
         try:
             driver.get(detail_url)
             driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
@@ -76,7 +75,7 @@ class SexBar(NinePorn):
             selector = etree.HTML(page_source)
             title = selector.xpath("//span[@id='thread_subject']/text()")[0]
             ban = selector.xpath('//div[@id="postlist"]/div[1]//div[@class="locked"]//text()')
-            #如果本帖被禁言，则跳过
+            # 如果本帖被禁言，则跳过
             if ban:
                 print(ban[0])
                 return [], '禁言-' + title
@@ -88,7 +87,7 @@ class SexBar(NinePorn):
                 pic_url_list = selector.xpath('//td[starts-with(@id,"postmessage")]//img[starts-with(@id,"aimg")]/@src')
             print("pic_url_list:%s, url:%s" % (len(pic_url_list), detail_url))
             if not pic_url_list:
-                title= '空列表-' + title
+                title = '空列表-' + title
             return pic_url_list, title
         except Exception:
             print('get_pic_list失败：%s' % detail_url)
@@ -104,14 +103,14 @@ class SexBar(NinePorn):
 
             try:
                 self.driver.get(self.page_url)
-                wait = WebDriverWait(self.driver, self.next_page_time*(i+1))
+                wait = WebDriverWait(self.driver, self.next_page_time * (i + 1))
                 wait.until(EC.presence_of_element_located((By.XPATH, '//a[text()="下一页"]')))
                 page_source = self.driver.page_source
                 selector = etree.HTML(page_source)
                 next_page = selector.xpath('//a[text()="下一页"]/text()')
                 print('next_page:%s' % next_page[0])
                 temp_next_url = selector.xpath('//a[text()="下一页"]/@href')[0]
-                next_url = temp_next_url if temp_next_url.startswith('http') else self.pre_url+temp_next_url
+                next_url = temp_next_url if temp_next_url.startswith('http') else self.pre_url + temp_next_url
                 print('next_url:%s' % next_url)
                 self.page_url = next_url
                 return next_url
@@ -127,14 +126,16 @@ class SexBar(NinePorn):
             for url in url_list:
                 if not self.check_repeat_url(url):
                     self.download(url)
-            if self.repeat_num>100:
+            if self.repeat_num > 100:
                 print('重复帖子过多')
                 return
             next_page = self.get_next_page()
             if not next_page:
-                print('最后一页:%s'%self.page_url)
+                print('最后一页:%s' % self.page_url)
                 self.driver.close()
                 return
+
+
 if __name__ == '__main__':
     sexbar = SexBar()
     sexbar.main()
