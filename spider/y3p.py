@@ -1,15 +1,37 @@
-from spider.nineporn import *
+from spider.base import *
 
 
-class Y3p(NinePorn):
-    def __init__(self):
-        super().__init__()
-        self.finish_file = os.path.join(self.save_dir, 'y3p.txt')
-        self.page_url = 'https://y3p.org/viewforum.php?f=6'
-        self.root_dir = r'E:\爬虫\y3p'
-        self.get_pre_process()
-        self.wait_xpath = '//div[@class="list-inner"]/a'
-        self.url_list_xpath = '//div[@class="list-inner"]/a/@href'
+class Y3p(BasePorn):
+    def __init__(self,
+                 page_url='https://y3p.org/viewforum.php?f=6',
+                 finish_file_name='y3p.txt',
+                 root_dir=r'E:\爬虫\y3p',
+                 max_repeat_num=1000,
+                 wait_time=30,
+                 long_wait_time=60,
+                 disable_load_img=True,
+                 headless=True,
+                 proxies=None,
+                 save_dir='../file',
+                 mutil_thread=True,
+                 url_list_xpath='//div[@class="list-inner"]/a/@href',
+                 next_page_xpath='//li[@class="arrow next"]/a/@href'
+                 ):
+        super().__init__(
+            page_url,
+            root_dir=root_dir,
+            finish_file_name=finish_file_name,
+            max_repeat_num=max_repeat_num,
+            wait_time=wait_time,
+            long_wait_time=long_wait_time,
+            disable_load_img=disable_load_img,
+            headless=headless,
+            proxies=proxies,
+            save_dir=save_dir,
+            mutil_thread=mutil_thread,
+            url_list_xpath=url_list_xpath,
+            next_page_xpath=next_page_xpath,
+        )
 
     def check_repeat_url(self, url):
         try:
@@ -30,12 +52,12 @@ class Y3p(NinePorn):
         try:
             driver.get(detail_url)
             driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
-            wait = WebDriverWait(driver, self.title_time)
+            wait = WebDriverWait(driver, self.wait_time)
             wait.until(EC.presence_of_element_located((By.XPATH, '//h2[@class="topic-title"]/a')))
             page_source = driver.page_source
             selector = etree.HTML(page_source)
             title = selector.xpath('//h2[@class="topic-title"]/a/text()')[0]
-            wait = WebDriverWait(driver, self.pic_list_time)
+            wait = WebDriverWait(driver, self.wait_time)
             wait.until(EC.presence_of_element_located((By.XPATH, '//div[@id="page-body"]/div[position()=3]')))
             pic_url_list = selector.xpath('//div[@id="page-body"]/div[position()=3]//img/@src')
             print("pic_url_list:%s, url:%s" % (len(pic_url_list), detail_url))
@@ -49,25 +71,7 @@ class Y3p(NinePorn):
         finally:
             driver.close()
 
-    def get_next_page(self):
-        for i in range(5):
-            try:
-                self.driver.get(self.page_url)
-                wait = WebDriverWait(self.driver, self.next_page_time * (i + 1))
-                wait.until(EC.presence_of_element_located((By.XPATH, '//li[@class="arrow next"]/a')))
-                page_source = self.driver.page_source
-                selector = etree.HTML(page_source)
-                next_url = selector.xpath('//li[@class="arrow next"]/a/@href')[0]
-                next_url = urljoin(self.pre_url, next_url)
-                print('next_url:%s' % next_url)
-                self.page_url = next_url
-                return next_url
-            except Exception:
-                print('获取下一页失败：%s' % self.page_url)
-                print(traceback.format_exc())
-                continue
-
 
 if __name__ == '__main__':
     y3p = Y3p()
-    y3p.main(mutil=True)
+    y3p.main()

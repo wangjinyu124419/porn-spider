@@ -1,16 +1,38 @@
-from spider.nineporn import *
+from spider.base import *
 
 
-class CaoLiu(NinePorn):
+class CaoLiu(BasePorn):
 
-    def __init__(self):
-        super().__init__()
-        self.root_dir = r'E:\爬虫\1024'
-        self.page_url = 'http://t66y.com/thread0806.php?fid=16&search=&page=1'
-        self.finish_file = os.path.join(self.save_dir, 'caoliu.txt')
-        self.wait_xpath = '//tbody/tr[position()>11]/td[2]/h3/a'
-        self.url_list_xpath = '//tbody/tr[position()>11]/td[2]/h3/a/@href'
-        self.get_pre_process()
+    def __init__(self,
+                 page_url='http://t66y.com/thread0806.php?fid=16&search=&page=1',
+                 root_dir=r'E:\爬虫\1024',
+                 finish_file_name='caoliu.txt',
+                 max_repeat_num=1000,
+                 wait_time=30,
+                 long_wait_time=60,
+                 disable_load_img=True,
+                 headless=True,
+                 proxies=None,
+                 save_dir='../file',
+                 mutil_thread=True,
+                 url_list_xpath='//tbody/tr[position()>11]/td[2]/h3/a/@href',
+                 next_page_xpath='//a[text()="下一頁"]/@href',
+                 ):
+        super().__init__(
+            page_url,
+            root_dir=root_dir,
+            finish_file_name=finish_file_name,
+            max_repeat_num=max_repeat_num,
+            wait_time=wait_time,
+            long_wait_time=long_wait_time,
+            disable_load_img=disable_load_img,
+            headless=headless,
+            proxies=proxies,
+            save_dir=save_dir,
+            mutil_thread=mutil_thread,
+            url_list_xpath=url_list_xpath,
+            next_page_xpath=next_page_xpath,
+        )
 
     def check_repeat_url(self, url):
         try:
@@ -28,17 +50,16 @@ class CaoLiu(NinePorn):
         title = ''
         self.options.add_argument('headless')
         self.options.add_argument("--window-size=0,0")
-
         driver = webdriver.Chrome(options=self.options)
         try:
             driver.get(detail_url)
             driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
-            wait = WebDriverWait(driver, self.title_time)
+            wait = WebDriverWait(driver, self.long_wait_time)
             wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="main"]/div[2]/table/tbody/tr/td')))
             page_source = driver.page_source
             selector = etree.HTML(page_source)
             title = selector.xpath("//h4/text()")[0]
-            wait = WebDriverWait(driver, self.pic_list_time)
+            wait = WebDriverWait(driver, self.wait_time)
             wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='tpc_content do_not_catch']")))
             pic_url_list = selector.xpath("//div[@class='tpc_content do_not_catch']//@src")
             print("pic_url_list:%s, url:%s" % (len(pic_url_list), detail_url))
@@ -53,27 +74,7 @@ class CaoLiu(NinePorn):
         finally:
             driver.close()
 
-    def get_next_page(self):
-        for i in range(5):
-            try:
-                self.driver.get(self.page_url)
-                wait = WebDriverWait(self.driver, self.next_page_time * (i + 1))
-                wait.until(EC.presence_of_element_located((By.XPATH, '//a[text()="下一頁"]')))
-                page_source = self.driver.page_source
-                selector = etree.HTML(page_source)
-                next_page = selector.xpath('//a[text()="下一頁"]/text()')
-                print('next_page:%s' % next_page[0])
-                next_url = selector.xpath('//a[text()="下一頁"]/@href')[0]
-                next_url = urljoin(self.pre_url, next_url)
-                print('next_url:%s' % next_url)
-                self.page_url = next_url
-                return next_url
-            except Exception:
-                print('获取下一页失败：%s' % self.page_url)
-                print(traceback.format_exc())
-                continue
-
 
 if __name__ == '__main__':
-    caoliu = CaoLiu()
-    caoliu.main(mutil=False)
+    caoliu = CaoLiu(mutil_thread=True)
+    caoliu.main()
