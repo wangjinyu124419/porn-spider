@@ -22,6 +22,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from zhconv import convert
 
+from config import nineporn_password, nineporn_username
+
 
 def count_time(fun):
     @wraps(fun)
@@ -40,8 +42,26 @@ class NinePorn():
     options = webdriver.ChromeOptions()
     prefs = {"profile.managed_default_content_settings.images": 2}
     options.add_experimental_option("prefs", prefs)
+    type_dict = {
+        'gem': {
+            'page_url': 'https://f1113.wonderfulday30.live/forumdisplay.php?fid=19&filter=digest',
+            'root_dir': r'E:\爬虫\91精华'
+        },
+        'ori_gem': {
+            'page_url': 'https://f1113.wonderfulday30.live/forumdisplay.php?fid=4&filter=digest',
+            'root_dir': r'E:\爬虫\91原创精华'
+        },
+        'ori': {
+            'page_url': 'https://f1113.wonderfulday30.live/forumdisplay.php?fid=4',
+            'root_dir': r'E:\爬虫\91原创'
+        },
+        'all': {
+            'page_url': 'https://f1113.wonderfulday30.live/forumdisplay.php?fid=19',
+            'root_dir': r'E:\爬虫\91全部'
+        },
+    }
 
-    def __init__(self, type=None, max_repeat_num=100):
+    def __init__(self, type='all', max_repeat_num=100):
         # 禁止网页加载图片，但是能正常获取图片url，提高爬取速度
         # https://stackoverflow.com/questions/28070315/python-disable-images-in-selenium-google-chromedriver/31581387#31581387
         options = webdriver.ChromeOptions()
@@ -52,41 +72,26 @@ class NinePorn():
         self.driver = webdriver.Chrome(options=options)
         # self.driver.minimize_window()
         # self.driver = webdriver.Chrome()
-        self.url_list_time = 30
-        self.pic_list_time = 30
-        self.title_time = 60
-        self.next_page_time = 60
-        self.login_time = 60
+        self.wait_time = 30
+        self.long_wait_time = 60
         self.save_dir = r'D:\PycharmProjects\sex-spider\file'
         self.finish_file = os.path.join(self.save_dir, 'nineporn.txt')
         self.repeat_num = 0
         self.max_repeat_num = max_repeat_num
         self.proxies = {
-            # 'http': 'http://127.0.0.1:10800',
-            # 'https': 'https://127.0.0.1:10800',
+            'http': 'http://127.0.0.1:10800',
+            'https': 'https://127.0.0.1:10800',
         }
+        self.home_url = 'https://f1113.wonderfulday30.live/index.php'
+        self.search_url = 'https://f1113.wonderfulday30.live/search.php'
         self.type = type
         self.wait_xpath = "//span[starts-with(@id,'thread')]/a"
         self.url_list_xpath = '//span[starts-with(@id,"thread")]/a/@href'
         self.convert_type = 'zh-cn'
-        if type == 'gem':
-            print('下载精华帖')
-            self.page_url = 'https://f1113.wonderfulday30.live/forumdisplay.php?fid=19&filter=digest'
-            self.root_dir = r'E:\爬虫\91精华'
-        elif type == 'hot':
-            print('下载热门贴')
-            self.page_url = 'https://f1113.wonderfulday30.live/forumdisplay.php?fid=19&filter=digest&orderby=heats'
-            self.root_dir = r'E:\爬虫\91热门'
-
-        elif type == 'all':
-            print('下载全部帖子')
-            # self.page_url = 'https://f1113.wonderfulday30.live/forumdisplay.php?fid=19'
-            self.page_url = 'https://f1113.wonderfulday30.live/forumdisplay.php?fid=19&page=764'
-            self.root_dir = r'E:\爬虫\91全部'
-        else:
-            print('下载全部帖子')
-            self.page_url = 'https://f1113.wonderfulday30.live/forumdisplay.php?fid=19'
-            self.root_dir = r'E:\爬虫\91全部'
+        type_info = self.type_dict.get(self.type)
+        all_info = self.type_dict.get('all')
+        self.page_url = type_info.get('page_url') or all_info.get('page_url')
+        self.root_dir = type_info.get('root_dir') or all_info.get('root_dir')
         self.get_pre_process()
 
     def get_pre_process(self):
@@ -101,7 +106,7 @@ class NinePorn():
         try:
             self.driver.get(self.page_url)
             self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
-            wait = WebDriverWait(self.driver, self.url_list_time)
+            wait = WebDriverWait(self.driver, self.wait_time)
             wait.until(EC.presence_of_element_located((By.XPATH, self.wait_xpath)))
             page_source = self.driver.page_source
             selector = etree.HTML(page_source)
@@ -123,7 +128,7 @@ class NinePorn():
             # driver.minimize_window()
             driver.get(detail_url)
             # driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
-            wait = WebDriverWait(driver, self.title_time)
+            wait = WebDriverWait(driver, self.long_wait_time)
             wait.until(EC.presence_of_element_located((By.XPATH, "//div[@id='threadtitle']/h1")))
             page_source = driver.page_source
             selector = etree.HTML(page_source)
@@ -143,7 +148,7 @@ class NinePorn():
             if author == 'admin':
                 return [], '管理员贴-' + title
 
-            wait = WebDriverWait(driver, self.pic_list_time)
+            wait = WebDriverWait(driver, self.long_wait_time)
             wait.until(EC.presence_of_element_located((By.XPATH, "//img[starts-with(@file,'http')]")))
             page_source = driver.page_source
             selector = etree.HTML(page_source)
@@ -163,7 +168,7 @@ class NinePorn():
         file_name = os.path.basename(parse_url.path)
         suffix = file_name.split('.')[-1]
         if suffix not in ['jpg', 'jpeg', 'png', 'gif']:
-            headers = requests.head(url, proxies=self.proxies, timeout=self.title_time).headers
+            headers = requests.head(url, proxies=self.proxies, timeout=self.long_wait_time).headers
             cd = headers.get('Content-Disposition')
             file_name = cd.split("''")[-1]
         return file_name
@@ -183,7 +188,7 @@ class NinePorn():
                     print("status_code:%s" % status_code)
                     print("url:%s" % url)
                     return
-                headers = requests.head(url, timeout=self.title_time).headers
+                headers = requests.head(url, timeout=self.long_wait_time).headers
                 pic_size = int(headers.get('content-length', 1024 * 1024))
                 pic_weight = ceil(pic_size / 1024 / 1024) * 10 or 10
                 content = requests.get(url, timeout=pic_weight * 2 ** i).content
@@ -224,7 +229,7 @@ class NinePorn():
         for i in range(5):
             try:
                 self.driver.get(self.page_url)
-                wait = WebDriverWait(self.driver, self.next_page_time * (i + 1))
+                wait = WebDriverWait(self.driver, self.wait_time * (i + 1))
                 wait.until(EC.presence_of_element_located((By.XPATH, '//a[@class="next"]')))
                 page_source = self.driver.page_source
                 selector = etree.HTML(page_source)
@@ -293,8 +298,105 @@ class NinePorn():
                 if title:
                     self.record_finish_url(url, title)
 
+    def search_action(self, text, type):
+        self.login()
+        self.driver.get(self.search_url)
+        search_button = self.driver.find_element_by_xpath('//button[@id="searchsubmit"]')
+        try:
+            if type == 'title':
+                title_input = self.driver.find_element_by_xpath('//input[@id="srchtxt"]')
+                title_input.send_keys(text)
+            if type == 'author':
+                advanced_button = self.driver.find_element_by_xpath('//p[@class="searchkey"]/a')
+                advanced_button.click()
+                author_input = self.driver.find_element_by_xpath('//input[@id="srchname"]')
+                author_input.send_keys(text)
+            search_button.click()
+            self.page_url = self.driver.current_url
+        except Exception as e:
+            raise e
+
+    def get_search_url_list(self):
+        try:
+            self.driver.get(self.page_url)
+            wait = WebDriverWait(self.driver, self.wait_time)
+            wait.until(EC.presence_of_element_located((By.XPATH, '//th[@class="subject"]/a')))
+            page_source = self.driver.page_source
+            selector = etree.HTML(page_source)
+            url_list = selector.xpath('//th[@class="subject"]/a/@href')
+        except Exception as e:
+            return []
+        return url_list
+
+    def login(self):
+        try:
+            self.driver.get(self.home_url)
+            login_btn = self.driver.find_element_by_xpath('//div[@id="umenu"]/a[position()=2]')
+            login_btn.click()
+            wait = WebDriverWait(self.driver, self.wait_time)
+            wait.until(EC.presence_of_element_located((By.XPATH, '//input[@name="username"]')))
+            username_input = self.driver.find_element_by_xpath('//input[@name="username"]')
+            password_input = self.driver.find_element_by_xpath('//input[@name="password"]')
+            enter = self.driver.find_element_by_xpath('//button[@name="loginsubmit"]')
+            username_input.send_keys(nineporn_username)
+            password_input.send_keys(nineporn_password)
+            enter.click()
+        except Exception as e:
+            raise e
+
+    def download_search(self, text, type):
+        self.search_action(text, type)
+        while True:
+            url_list = self.get_search_url_list()
+            url_list = [urljoin(self.pre_url, url) for url in url_list]
+            self.single_thread_download(url_list)
+            next_page = self.get_next_page()
+            if not next_page:
+                print('最后一页:%s' % self.page_url)
+                self.driver.quit()
+                break
+
+    def get_user_list(self):
+        try:
+            self.driver.get(self.page_url)
+            self.driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
+            wait = WebDriverWait(self.driver, self.wait_time)
+            wait.until(EC.presence_of_element_located((By.XPATH, self.wait_xpath)))
+            page_source = self.driver.page_source
+            selector = etree.HTML(page_source)
+            user_list = selector.xpath('//tbody//td[@class="author"]//a/text()')
+        except Exception as e:
+            print('get_user_list失败:{}\nException:{}'.format(self.page_url, repr(e)))
+            return []
+        print('%s:get_user_list获取完成:%s' % (len(user_list), self.page_url))
+        return user_list
+
+    def get_big_user(self):
+        all_user_set = set()
+        print('开始下载:{}'.format(self.type))
+        while True:
+            user_list = self.get_user_list()
+            all_user_set |= set(user_list)
+            next_page = self.get_next_page()
+            if not next_page:
+                print('最后一页:%s' % self.page_url)
+                self.driver.quit()
+                break
+
+        try:
+            with open('../file/big_user.txt', 'r', encoding='utf8') as f:
+                user_list = f.readlines()
+                user_list = [user.strip() for user in user_list]
+            all_user_set |= set(user_list)
+        except FileNotFoundError:
+            pass
+        with open('../file/big_user.txt', 'w', encoding='utf8') as f:
+            for user in all_user_set:
+                f.write(user + "\n")
+
     @count_time
     def main(self, mutil=True):
+        print('开始下载:{}'.format(self.type))
         while True:
             url_list = self.get_url_list()
             url_list = [urljoin(self.pre_url, url) for url in url_list]
@@ -317,5 +419,12 @@ class NinePorn():
 if __name__ == '__main__':
     gem = NinePorn('gem')
     gem.main(mutil=False)
-    # all = NinePorn('all', max_repeat_num=1000)
-    # all.main(mutil=True)
+    # all = NinePorn('all')
+    # all.main(mutil=False)
+    # ori = NinePorn('ori_gem')
+    # ori.main()
+    # ori.get_big_user()
+
+    # np = NinePorn()
+    # np.download_search(text='lvcha7777', type='author')
+    # np.download_search(text='露脸', type='title')
