@@ -61,13 +61,11 @@ class Y3p(BasePorn):
             wait.until(EC.presence_of_element_located((By.XPATH, '//div[@id="page-body"]/div[position()=3]')))
             pic_url_list = selector.xpath('//div[@id="page-body"]/div[position()=3]//img/@src')
             print("pic_url_list:%s, url:%s" % (len(pic_url_list), detail_url))
-            if not pic_url_list:
-                title = '空列表-' + title
-            return pic_url_list, title
+            return True, pic_url_list, title
         except Exception:
             print('get_pic_list失败：%s' % detail_url)
             print(traceback.format_exc())
-            return [], '失败-' + title
+            return False, [], title
         finally:
             driver.close()
 

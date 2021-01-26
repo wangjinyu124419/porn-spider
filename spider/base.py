@@ -1,3 +1,4 @@
+import json
 from math import ceil
 
 import gevent
@@ -18,13 +19,14 @@ from urllib.parse import urljoin
 from urllib.parse import urlparse
 
 import requests
-
 from selenium import webdriver
 from lxml import etree
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from zhconv import convert
+
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def count_time(func):
@@ -42,7 +44,7 @@ def count_time(func):
 
 class BasePorn(ABC):
     def __init__(self,
-                 page_url,
+                 page_url=None,
                  root_dir='',
                  finish_file_name=None,
                  max_repeat_num=100,
@@ -54,10 +56,12 @@ class BasePorn(ABC):
                      'http': 'http://127.0.0.1:10800',
                      'https': 'https://127.0.0.1:10800',
                  },
-                 save_dir='../file',
+                 save_dir=os.path.join(base_dir, 'file'),
                  mutil_thread=True,
                  url_list_xpath='',
                  next_page_xpath='',
+                 cookie_file='',
+                 max_workers = 5
                  ):
         # 禁止网页加载图片，但是能正常获取图片url，提高爬取速度
         # https://stackoverflow.com/questions/28070315/python-disable-images-in-selenium-google-chromedriver/31581387#31581387
@@ -69,6 +73,7 @@ class BasePorn(ABC):
         if disable_load_img:
             self.options.add_experimental_option("prefs", prefs)
         self.driver = webdriver.Chrome(options=self.options)
+
         self.wait_time = wait_time
         self.long_wait_time = long_wait_time
         self.repeat_num = 0
@@ -83,19 +88,38 @@ class BasePorn(ABC):
         self.mutil_thread = mutil_thread
         self.url_list_xpath = url_list_xpath
         self.next_page_xpath = next_page_xpath
+        self.cookie_file = cookie_file
+        self.cookie_path = os.path.join(self.save_dir, self.cookie_file)
+        self.max_workers = max_workers
         self.get_pre_process()
 
     def get_pre_process(self):
         res = urlparse(self.page_url)
         self.pre_url = res.scheme + '://' + res.netloc
-        with open(self.finish_file, 'r', encoding='utf8') as f:
-            self.content = f.read()
+        try:
+            with open(self.finish_file, 'r', encoding='utf8') as f:
+                self.content = f.read()
+        except FileNotFoundError:
+            pass
+        # self.set_cookies()
 
     @abstractmethod
     def get_pic_list(self, detail_url):
         pass
 
-    @count_time
+    def check_repeat_url(self, url):
+        try:
+            parse_url = urlparse(url)
+            unique_str = os.path.basename(parse_url.path)
+            if unique_str in self.content:
+                self.repeat_num += 1
+                print('repeat_num:%s' % self.repeat_num)
+                print('已经下载过：%s' % (url))
+                return True
+        except Exception:
+            print(traceback.format_exc())
+
+    # @count_time
     def get_url_list(self):
         try:
             self.driver.get(self.page_url)
@@ -112,8 +136,8 @@ class BasePorn(ABC):
         print('%s:url_list获取完成:%s' % (len(url_list), self.page_url))
         return url_list
 
-    def get_next_page(self):
-        for i in range(5):
+    def get_next_page(self, repeat_time=5):
+        for i in range(repeat_time):
             try:
                 self.driver.get(self.page_url)
                 wait = WebDriverWait(self.driver, self.wait_time * (i + 1))
@@ -129,8 +153,8 @@ class BasePorn(ABC):
             except Exception:
                 print('获取下一页失败：%s' % self.page_url)
                 print(traceback.format_exc())
-                time.sleep(self.wait_time * (i + 1))
-                continue
+                if i < repeat_time - 1:
+                    time.sleep(self.wait_time * (i + 1))
 
     def get_pic_name(self, url):
         parse_url = urlparse(url)
@@ -182,19 +206,37 @@ class BasePorn(ABC):
             print('写入失败：%s，标题：%s' % (finish_url, title))
             print(traceback.format_exc())
 
-    @abstractmethod
-    def check_repeat_url(self, url):
-        pass
+    def login(self):
+        raise NotImplementedError
 
-    @count_time
+    def save_cookie(self):
+        self.login()
+        cookies = self.driver.get_cookies()
+        with open(self.cookie_path, 'w', encoding='utf8') as f:
+            cookies_json = json.dumps(cookies)
+            f.write(cookies_json)
+
+    def set_cookies(self):
+        # 设置cookie前需要先打开网页
+        self.driver.get(self.page_url)
+        with open(self.cookie_path, encoding='utf8') as f:
+            cookies_json = f.read()
+            cookies = json.loads(cookies_json)
+        for cookie in cookies:
+            self.driver.add_cookie(cookie)
+        # 设置cookie后需要刷新网页，显示登录效果
+        self.driver.refresh()
+
+    # @count_time
     def download(self, detail_url):
-        pic_list, title = self.get_pic_list(detail_url)
+        success, pic_list, title = self.get_pic_list(detail_url)
         legal_title = re.sub(r"[^\w]", "", title)
         legal_title = convert(legal_title, self.convert_type)
+        if not success:
+            legal_title = '失败-' + legal_title
         if len(pic_list) < 10:
             print('图片过少:%s' % detail_url)
             return legal_title
-
         pic_list = [urljoin(self.pre_url, pic_url) for pic_url in pic_list]
         print('开始下载:%s' % detail_url)
         path = os.path.join(self.root_dir, legal_title)
@@ -238,14 +280,14 @@ class BasePorn(ABC):
                 if title:
                     self.record_finish_url(url, title)
 
-    @count_time
+    # @count_time
     def main(self):
         print('开始爬取:{}'.format(self.page_url))
         while True:
             url_list = self.get_url_list()
             url_list = [urljoin(self.pre_url, url) for url in url_list]
             if self.mutil_thread:
-                self.mutil_thread_download(url_list, max_workers=10)
+                self.mutil_thread_download(url_list, max_workers=self.max_workers)
             else:
                 self.single_thread_download(url_list)
             if self.repeat_num > self.max_repeat_num:
@@ -258,7 +300,3 @@ class BasePorn(ABC):
                 self.driver.quit()
                 break
         print('结束爬取:{}'.format(self.page_url))
-
-
-if __name__ == '__main__':
-    pass

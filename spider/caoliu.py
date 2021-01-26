@@ -34,18 +34,6 @@ class CaoLiu(BasePorn):
             next_page_xpath=next_page_xpath,
         )
 
-    def check_repeat_url(self, url):
-        try:
-            parse_url = urlparse(url)
-            unique_str = os.path.basename(parse_url.path)
-            if unique_str in self.content:
-                self.repeat_num += 1
-                print('repeat_num:%s' % self.repeat_num)
-                print('已经下载过：%s' % (url))
-                return True
-        except Exception:
-            print(traceback.format_exc())
-
     def get_pic_list(self, detail_url):
         title = ''
         self.options.add_argument('headless')
@@ -64,17 +52,15 @@ class CaoLiu(BasePorn):
             pic_url_list = selector.xpath("//div[@class='tpc_content do_not_catch']//@src")
             print("pic_url_list:%s, url:%s" % (len(pic_url_list), detail_url))
             fix_pic_url_list = [urljoin(self.pre_url, pic_url) for pic_url in pic_url_list]
-            if not pic_url_list:
-                title = '空列表-' + title
-            return fix_pic_url_list, title
+            return True, fix_pic_url_list, title
         except Exception:
             print('get_pic_list失败：%s' % detail_url)
             print(traceback.format_exc())
-            return [], '失败-' + title
+            return False, [], title
         finally:
             driver.close()
 
 
 if __name__ == '__main__':
-    caoliu = CaoLiu(mutil_thread=True)
+    caoliu = CaoLiu()
     caoliu.main()
