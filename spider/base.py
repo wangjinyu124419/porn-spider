@@ -61,7 +61,7 @@ class BasePorn(ABC):
                  url_list_xpath='',
                  next_page_xpath='',
                  cookie_file='',
-                 max_workers = 5
+                 max_workers=5
                  ):
         # 禁止网页加载图片，但是能正常获取图片url，提高爬取速度
         # https://stackoverflow.com/questions/28070315/python-disable-images-in-selenium-google-chromedriver/31581387#31581387

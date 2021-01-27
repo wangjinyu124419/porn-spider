@@ -107,9 +107,9 @@ class NinePorn(BasePorn):
             print(traceback.format_exc())
 
     def search_action(self, text, type, click_advanced=True):
-        self.driver.get(self.search_url)
-        search_button = self.driver.find_element_by_xpath('//button[@id="searchsubmit"]')
         try:
+            self.driver.get(self.search_url)
+            search_button = self.driver.find_element_by_xpath('//button[@id="searchsubmit"]')
             if type == 'title':
                 title_input = self.driver.find_element_by_xpath('//input[@id="srchtxt"]')
                 title_input.send_keys(text)
@@ -125,7 +125,7 @@ class NinePorn(BasePorn):
             search_button.click()
             self.page_url = self.driver.current_url
         except Exception as e:
-            raise e
+            print(e)
 
     def get_search_url_list(self):
         for i in range(3):
@@ -200,7 +200,7 @@ class NinePorn(BasePorn):
 
     def download_all_search(self):
         with open('../file/big_user.txt', 'r', encoding='utf8') as f:
-            user_list = [user.strip() for user in f.readlines()][1060:]
+            user_list = [user.strip() for user in f.readlines()]
         self.login()
         for user in user_list:
             print('开始下载用户:{}'.format(user))
