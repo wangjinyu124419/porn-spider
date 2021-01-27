@@ -18,6 +18,7 @@ class Megamich(BasePorn):
                  mutil_thread=True,
                  url_list_xpath='//ul[@class="list-normal"]/li//h3/a/@href',
                  next_page_xpath='//a[@class="next page-numbers"]/@href',
+                 max_workers=5
                  ):
         super().__init__(
             page_url,
@@ -33,6 +34,7 @@ class Megamich(BasePorn):
             mutil_thread=mutil_thread,
             url_list_xpath=url_list_xpath,
             next_page_xpath=next_page_xpath,
+            max_workers=max_workers
         )
 
     def get_pic_list(self, detail_url):
@@ -68,7 +70,10 @@ class Megamich(BasePorn):
         legal_title = re.sub(r"[^\w]", "", title)
         legal_title = convert(legal_title, self.convert_type)
         tranlate_title = baidu_tranlate(legal_title)
-        legal_title = tranlate_title + '_____' + title
+        tranlate_title = re.sub(r"[^\w]", "", tranlate_title)
+        legal_title = (tranlate_title + '_____' + legal_title)[:100]
+        if not tranlate_title:
+            return '翻译失败-' + legal_title
         if not success:
             legal_title = '失败-' + legal_title
         if len(pic_list) < 10:
@@ -88,5 +93,4 @@ class Megamich(BasePorn):
 
 if __name__ == '__main__':
     mg = Megamich()
-    # mg.main()
-    mg.get_pic_name('https://img.peta2.jp/img/upload/th/1900000-1901000/1900985/co_402_2_org.jpg?sel=1608936641')
+    mg.main()

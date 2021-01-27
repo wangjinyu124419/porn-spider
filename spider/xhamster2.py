@@ -378,6 +378,7 @@ class Xhamster():
         for user in self.user_list:
             print('开始下载用户:{}'.format(user))
             self.one_user(user)
+        self.driver.quit()
 
     def rename(self):
         print('开始爬取:{}'.format(self.page_url))
