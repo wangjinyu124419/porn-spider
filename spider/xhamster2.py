@@ -280,7 +280,10 @@ class Xhamster():
         if pic_num != len(pic_list):
             legal_title = '数量不符-' + legal_title
             print('图片数量不符，pic_num:{},pic_list:{}'.format(pic_num, len(pic_list)))
-        path = os.path.join(self.root_dir, self.username, legal_title)
+        if self.username:
+            path = os.path.join(self.root_dir, self.username, legal_title)
+        else:
+            path = os.path.join(self.root_dir, legal_title)
         if not os.path.exists(path):
             os.makedirs(path)
         g_list = []
@@ -350,16 +353,24 @@ class Xhamster():
         # 设置cookie后需要刷新网页，显示登录效果
         driver.refresh()
 
-    def one_user(self, username):
-        self.username = username
+    def get_galleriy_num(self, username):
         page_url = self.base_url.format(username)
         page_source = requests.get(page_url, timeout=self.wait_time, proxies=self.proxies).content
         selector = etree.HTML(page_source)
-        galleriy_num = int(selector.xpath('//h1[@class="current-tab button"]//span/text()')[0])
+        galleriy_num = str(selector.xpath('//h1[@class="current-tab button"]//span/text()')[0])
+        if galleriy_num.endswith('K'):
+            galleriy_num = float(galleriy_num[:-1]) * 1000
+        else:
+            galleriy_num = int(galleriy_num)
         galleriy_page_num = ceil(galleriy_num / 30)
+        return galleriy_page_num
+
+    def one_user(self, username):
+        self.username = username
+        galleriy_page_num = self.get_galleriy_num(username)
         for i in range(1, galleriy_page_num + 1):
             print('用户:{}第几页:{}'.format(username, i))
-            self.page_url = page_url + "/" + str(i)
+            self.page_url = self.base_url.format(username) + "/" + str(i)
             url_list = self.get_url_list()
             with ThreadPoolExecutor() as executor:
                 t_dict = {executor.submit(self.download, pic_t): pic_t for pic_t in url_list if

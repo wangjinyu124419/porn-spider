@@ -32,11 +32,12 @@ base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def count_time(func):
     @wraps(func)
     def warpper(*args, **kwargs):
-        s_time = time.time()
+        start = time.time()
         res = func(*args, **kwargs)
-        e_time = time.time()
-        t_time = e_time - s_time
-        print('%s耗时：%s' % (func.__name__, t_time))
+        end = time.time()
+        elapsed = end - start
+        warpper.elapsed =elapsed
+        print('%s耗时：%s' % (func.__name__, elapsed))
         return res
 
     return warpper

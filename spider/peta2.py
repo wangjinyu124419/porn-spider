@@ -56,12 +56,12 @@ class Peta(BasePorn):
 
     def main(self):
         for url in [
-                    'https://5689.peta2.jp/1900988.html',
-                    'https://5689.peta2.jp/534680.html',
-                    'https://5689.peta2.jp/499765.html',
-                    'https://5689.peta2.jp/1911897.html',
-                    'https://5689.peta2.jp/1901290.html',
-                    'https://5689.peta2.jp/1900985.html',
+            'https://5689.peta2.jp/1900988.html',
+            'https://5689.peta2.jp/534680.html',
+            'https://5689.peta2.jp/499765.html',
+            'https://5689.peta2.jp/1911897.html',
+            'https://5689.peta2.jp/1901290.html',
+            'https://5689.peta2.jp/1900985.html',
 
         ]:
             self.page_url = url

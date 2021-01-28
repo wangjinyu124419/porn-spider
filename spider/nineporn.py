@@ -106,31 +106,41 @@ class NinePorn(BasePorn):
         except Exception:
             print(traceback.format_exc())
 
-    def search_action(self, text, type, click_advanced=True):
-        try:
-            self.driver.get(self.search_url)
-            search_button = self.driver.find_element_by_xpath('//button[@id="searchsubmit"]')
-            if type == 'title':
-                title_input = self.driver.find_element_by_xpath('//input[@id="srchtxt"]')
-                title_input.send_keys(text)
-            if type == 'author':
-                author_input = self.driver.find_element_by_xpath('//input[@id="srchname"]')
+    def search_action(self, text, type='author', click_advanced=True):
+        for i in range(1, 5):
+            try:
+                self.driver.get(self.search_url)
+                search_button = self.driver.find_element_by_xpath('//button[@id="searchsubmit"]')
+                if type == 'title':
+                    title_input = self.driver.find_element_by_xpath('//input[@id="srchtxt"]')
+                    title_input.send_keys(text)
+                if type == 'author':
+                    author_input = self.driver.find_element_by_xpath('//input[@id="srchname"]')
+                    page_source = self.driver.page_source
+                    selector = etree.HTML(page_source)
+                    is_show_advanced = selector.xpath('//div[@id="search_option"]/@style')
+                    if is_show_advanced:
+                        advanced_button = self.driver.find_element_by_xpath('//p[@class="searchkey"]/a')
+                        advanced_button.click()
+                    author_input.send_keys(text)
+                search_button.click()
+                wait = WebDriverWait(self.driver, self.wait_time)
+                wait.until(EC.presence_of_element_located((By.XPATH, '//form[@class="searchform"]')))
                 page_source = self.driver.page_source
                 selector = etree.HTML(page_source)
-                is_show_advanced = selector.xpath('//div[@id="search_option"]/@style')
-                if is_show_advanced:
-                    advanced_button = self.driver.find_element_by_xpath('//p[@class="searchkey"]/a')
-                    advanced_button.click()
-                author_input.send_keys(text)
-            search_button.click()
-            self.page_url = self.driver.current_url
-        except Exception as e:
-            print(e)
+                search_result = selector.xpath('//div[@class="searchlist threadlist datalist"]')
+                if not search_result:
+                    time.sleep(i * 10)
+                    continue
+                return
+            except Exception as e:
+                print('搜索异常:{},{}'.format(text, e))
+                time.sleep(i * 10)
 
     def get_search_url_list(self):
         for i in range(3):
             try:
-                self.driver.get(self.page_url)
+                # self.driver.get(self.page_url)
                 wait = WebDriverWait(self.driver, self.wait_time)
                 wait.until(
                     EC.presence_of_element_located((By.XPATH, '//div[@id="wrap"]/div/table[@summary="搜索"]/tbody')))
@@ -204,10 +214,15 @@ class NinePorn(BasePorn):
         self.login()
         for user in user_list:
             print('开始下载用户:{}'.format(user))
-            self.download_search(user, 'author', need_login=False, )
+            self.download_search(user, need_login=False)
+            elapsed = self.download_search.elapsed
+            # 控制搜索频率
+            if elapsed < 10:
+                time.sleep(10)
         self.driver.quit()
 
-    def download_search(self, text, search_type, need_login=True):
+    @count_time
+    def download_search(self, text, search_type='author', need_login=True):
         assert search_type in ['author', 'title'], '搜索类型错误'
         if need_login:
             self.login()
