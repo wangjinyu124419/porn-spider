@@ -48,6 +48,7 @@ class BasePorn(ABC):
                  page_url=None,
                  root_dir='',
                  finish_file_name=None,
+                 first_fetch=False,
                  max_repeat_num=100,
                  wait_time=30,
                  long_wait_time=60,
@@ -79,6 +80,7 @@ class BasePorn(ABC):
         self.long_wait_time = long_wait_time
         self.repeat_num = 0
         self.max_repeat_num = max_repeat_num
+        self.first_fetch = first_fetch
         self.proxies = proxies
         self.convert_type = 'zh-cn'
         self.save_dir = save_dir
@@ -293,7 +295,7 @@ class BasePorn(ABC):
                 self.mutil_thread_download(url_list, max_workers=self.max_workers)
             else:
                 self.single_thread_download(url_list)
-            if self.repeat_num > self.max_repeat_num:
+            if not self.first_fetch and self.repeat_num > self.max_repeat_num:
                 print('重复帖子过多')
                 self.driver.quit()
                 break

@@ -8,6 +8,7 @@ class ZiPai(BasePorn):
                  root_dir=r'E:\爬虫\99zipai\张婉芳',
                  finish_file_name='99zipai.txt',
                  max_repeat_num=1000,
+                 first_fetch=False,
                  wait_time=30,
                  long_wait_time=60,
                  disable_load_img=True,
@@ -23,6 +24,7 @@ class ZiPai(BasePorn):
             root_dir=root_dir,
             finish_file_name=finish_file_name,
             max_repeat_num=max_repeat_num,
+            first_fetch=first_fetch,
             wait_time=wait_time,
             long_wait_time=long_wait_time,
             disable_load_img=disable_load_img,
@@ -59,5 +61,5 @@ class ZiPai(BasePorn):
 
 
 if __name__ == '__main__':
-    zipai = ZiPai()
+    zipai = ZiPai(first_fetch=True)
     zipai.main()
