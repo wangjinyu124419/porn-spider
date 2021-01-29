@@ -31,7 +31,7 @@ class NinePorn(BasePorn):
     }
 
     def __init__(self,
-                 category,
+                 category='all',
                  finish_file_name='nineporn.txt',
                  max_repeat_num=1000,
                  wait_time=30,
@@ -209,10 +209,11 @@ class NinePorn(BasePorn):
         return author_title
 
     def download_all_search(self):
-        with open('../file/big_user.txt', 'r', encoding='utf8') as f:
+        big_user_path = os.path.join(self.save_dir, 'big_user.txt')
+        with open(big_user_path, 'r', encoding='utf8') as f:
             user_list = [user.strip() for user in f.readlines()]
         self.login()
-        for user in user_list:
+        for user in user_list[1235:]:
             print('开始下载用户:{}'.format(user))
             self.download_search(user, need_login=False)
             elapsed = self.download_search.elapsed
@@ -258,15 +259,15 @@ class NinePorn(BasePorn):
                 print('最后一页:%s' % self.page_url)
                 self.driver.quit()
                 break
-
+        file_path = os.path.join(self.save_dir, 'big_user.txt')
         try:
-            with open('../file/big_user.txt', 'r', encoding='utf8') as f:
+            with open(file_path, 'r', encoding='utf8') as f:
                 user_list = f.readlines()
                 user_list = [user.strip() for user in user_list]
             all_user_set |= set(user_list)
         except FileNotFoundError:
             pass
-        with open('../file/big_user.txt', 'w', encoding='utf8') as f:
+        with open(file_path, 'w', encoding='utf8') as f:
             for user in all_user_set:
                 f.write(user + "\n")
 

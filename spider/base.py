@@ -36,7 +36,7 @@ def count_time(func):
         res = func(*args, **kwargs)
         end = time.time()
         elapsed = end - start
-        warpper.elapsed =elapsed
+        warpper.elapsed = elapsed
         print('%s耗时：%s' % (func.__name__, elapsed))
         return res
 
@@ -117,6 +117,8 @@ class BasePorn(ABC):
                 print('repeat_num:%s' % self.repeat_num)
                 print('已经下载过：%s' % (url))
                 return True
+        except AttributeError:
+            pass
         except Exception:
             print(traceback.format_exc())
 

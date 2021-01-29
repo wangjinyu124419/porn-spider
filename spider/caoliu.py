@@ -13,7 +13,7 @@ class CaoLiu(BasePorn):
                  disable_load_img=True,
                  headless=True,
                  proxies=None,
-                 save_dir='../file',
+                 save_dir=os.path.join(base_dir, 'file'),
                  mutil_thread=True,
                  url_list_xpath='//tbody/tr[position()>11]/td[2]/h3/a/@href',
                  next_page_xpath='//a[text()="下一頁"]/@href',

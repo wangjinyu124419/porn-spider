@@ -13,13 +13,12 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import traceback
-import re
 
 from spider.base import count_time
 
 
 class OnePage():
-    def img_xpath__init__(self, img_xpath='//body//div//img/@src'):
+    def __init__(self, img_xpath='//body//div//img/@src'):
         # 禁止网页加载图片，但是能正常获取图片url，提高爬取速度
         # https://stackoverflow.com/questions/28070315/python-disable-images-in-selenium-google-chromedriver/31581387#31581387
         options = webdriver.ChromeOptions()
@@ -38,6 +37,13 @@ class OnePage():
         self.wait_xpath = self.img_xpath.rsplit('/', maxsplit=1)[0]
 
     def get_pic_name(self, url):
+        # todo 解析图片名称
+        # 名称特殊的图片
+        # https://www.sammyboy.com/attachments/1589520290213-png.78635/
+        # https://y3p.org/download/file.php?id=235
+        # 不带Content-Disposition
+        # https://99zipai.com/d/file/selfies/202101/e4baa3451275c4c748e210d0c767a1c9.jpg
+
         parse_url = urlparse(url)
         file_name = os.path.basename(parse_url.path)
         suffix = file_name.split('.')[-1]
@@ -69,12 +75,12 @@ class OnePage():
         finally:
             self.driver.quit()
 
-    def get_pic_name(self, url):
-        # https://www.sammyboy.com/attachments/img-20200515-wa0009-jpg.78641/
-        res = re.search('/([^/]*(jpg|png|jpeg))', url)
-        if not res:
-            return 'temp.jpg'
-        return res.group(1) + '.jpg'
+    # def get_pic_name(self, url):
+    #     # https://www.sammyboy.com/attachments/img-20200515-wa0009-jpg.78641/
+    #     res = re.search('/([^/]*)(jpg|png|jpeg)', url)
+    #     if not res:
+    #         return 'temp.jpg'
+    #     return res.group(1) + '.jpg'
 
     def save_pic(self, url):
         name = self.get_pic_name(url)
@@ -112,5 +118,6 @@ class OnePage():
 
 
 if __name__ == '__main__':
-    op = OnePage(img_xpath='//div[@class="entry-content"]/p[6]//img/@src')
-    op.download('https://iav77.com/archives/296486')
+    op = OnePage(img_xpath='//div[@id="content"]//div[@class="entry-content"]/p/img/@src')
+    # op.download('https://iav77.com/archives/296483')
+    op.get_pic_name('https://www.sammyboy.com/attachments/img-20200515-wa0009-jpg.78641/')
